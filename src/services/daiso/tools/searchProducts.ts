@@ -20,7 +20,7 @@ interface SearchProductsArgs {
 /**
  * 다이소몰 API에서 상품 검색
  */
-async function fetchProducts(
+export async function fetchProducts(
   query: string,
   page: number = 1,
   pageSize: number = 30

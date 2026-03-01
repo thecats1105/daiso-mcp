@@ -96,7 +96,7 @@ function parseStoresFromHtml(html: string): Store[] {
 /**
  * 다이소 매장 검색 API 호출
  */
-async function fetchStores(
+export async function fetchStores(
   keyword?: string,
   sido?: string,
   gugun?: string,

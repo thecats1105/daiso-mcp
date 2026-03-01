@@ -23,7 +23,7 @@ interface CheckInventoryArgs {
 /**
  * 온라인 재고 조회
  */
-async function fetchOnlineStock(productNo: string): Promise<number> {
+export async function fetchOnlineStock(productNo: string): Promise<number> {
   const data = await fetchJson<OnlineStockResponse>(DAISOMALL_API.ONLINE_STOCK, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -40,7 +40,7 @@ async function fetchOnlineStock(productNo: string): Promise<number> {
 /**
  * 매장별 재고 조회
  */
-async function fetchStoreInventory(
+export async function fetchStoreInventory(
   productNo: string,
   lat: number,
   lng: number,
