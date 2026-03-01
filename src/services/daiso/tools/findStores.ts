@@ -2,24 +2,26 @@
  * 매장 찾기 도구
  *
  * 다이소 API를 사용하여 매장을 검색합니다.
- * API: https://www.daiso.co.kr/cs/ajax/shop_search
  */
 
-import type { Store, StoreOptions, McpToolResponse } from '../types/index.js';
-import { fetchHtml, fetchJson } from '../utils/fetch.js';
+import * as z from 'zod';
+import type { McpToolResponse, ToolRegistration } from '../../../core/types.js';
+import type { Store, StoreOptions } from '../types.js';
+import { DAISO_WEB_API, formatTime } from '../api.js';
+import { fetchHtml, fetchJson } from '../../../utils/fetch.js';
 
+/** 도구 입력 인터페이스 */
 interface FindStoresArgs {
-  // 키워드 검색
   keyword?: string;
-  // 지역 검색
   sido?: string;
   gugun?: string;
   dong?: string;
-  // 결과 제한
   limit?: number;
 }
 
-// HTML에서 매장 정보 파싱
+/**
+ * HTML에서 매장 정보 파싱
+ */
 function parseStoresFromHtml(html: string): Store[] {
   const stores: Store[] = [];
 
@@ -31,7 +33,7 @@ function parseStoresFromHtml(html: string): Store[] {
     const startIdx = divMatch.index;
     const divTag = divMatch[0];
 
-    // 해당 div의 끝 찾기 (다음 bx-store div나 특정 마커까지)
+    // 해당 div의 끝 찾기
     const endIdx = html.indexOf('<div class="bx-store"', startIdx + 1);
     const blockEnd = endIdx > 0 ? endIdx : startIdx + 2000;
     const block = html.slice(startIdx, blockEnd);
@@ -76,14 +78,6 @@ function parseStoresFromHtml(html: string): Store[] {
       pickup: info.online_yn === 'Y',
     };
 
-    // 영업 시간 포맷팅
-    const formatTime = (time: string): string => {
-      if (time.length === 4) {
-        return `${time.slice(0, 2)}:${time.slice(2)}`;
-      }
-      return time;
-    };
-
     stores.push({
       name: nameMatch[1].trim(),
       phone: phoneMatch ? phoneMatch[1].replace('T.', '').trim() : '',
@@ -99,14 +93,16 @@ function parseStoresFromHtml(html: string): Store[] {
   return stores;
 }
 
-// 다이소 매장 검색 API 호출
+/**
+ * 다이소 매장 검색 API 호출
+ */
 async function fetchStores(
   keyword?: string,
   sido?: string,
   gugun?: string,
   dong?: string
 ): Promise<Store[]> {
-  const url = new URL('https://www.daiso.co.kr/cs/ajax/shop_search');
+  const url = new URL(DAISO_WEB_API.SHOP_SEARCH);
 
   url.searchParams.set('name_address', keyword || '');
   url.searchParams.set('sido', sido || '');
@@ -117,18 +113,22 @@ async function fetchStores(
   return parseStoresFromHtml(html);
 }
 
-// 시/도별 구/군 목록 조회
+/**
+ * 시/도별 구/군 목록 조회
+ */
 export async function getDistricts(sido: string): Promise<string[]> {
-  const url = new URL('https://www.daiso.co.kr/cs/ajax/sido_search');
+  const url = new URL(DAISO_WEB_API.SIDO_SEARCH);
   url.searchParams.set('sido', sido);
 
   const data = await fetchJson<Array<{ value: string }>>(url.toString());
   return data.map((item) => item.value);
 }
 
-// 구/군별 동 목록 조회
+/**
+ * 구/군별 동 목록 조회
+ */
 export async function getNeighborhoods(sido: string, gugun: string): Promise<string[]> {
-  const url = new URL('https://www.daiso.co.kr/cs/ajax/gugun_search');
+  const url = new URL(DAISO_WEB_API.GUGUN_SEARCH);
   url.searchParams.set('sido', sido);
   url.searchParams.set('gugun', gugun);
 
@@ -136,7 +136,10 @@ export async function getNeighborhoods(sido: string, gugun: string): Promise<str
   return data.map((item) => item.value);
 }
 
-export async function findStores(args: FindStoresArgs): Promise<McpToolResponse> {
+/**
+ * 매장 검색 핸들러
+ */
+async function findStores(args: FindStoresArgs): Promise<McpToolResponse> {
   const { keyword, sido, gugun, dong, limit = 50 } = args;
 
   // 최소한 하나의 검색 조건이 필요
@@ -155,11 +158,28 @@ export async function findStores(args: FindStoresArgs): Promise<McpToolResponse>
   };
 
   return {
-    content: [
-      {
-        type: 'text',
-        text: JSON.stringify(result, null, 2),
+    content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+  };
+}
+
+/**
+ * 도구 등록 정보 생성
+ */
+export function createFindStoresTool(): ToolRegistration {
+  return {
+    name: 'daiso_find_stores',
+    metadata: {
+      title: '매장 검색',
+      description:
+        '다이소 매장을 검색합니다. 키워드(매장명, 주소) 또는 지역(시도/구군/동)으로 검색할 수 있습니다.',
+      inputSchema: {
+        keyword: z.string().optional().describe('검색할 매장명 또는 주소 키워드 (예: 강남, 홍대)'),
+        sido: z.string().optional().describe('시/도 (예: 서울, 경기, 부산)'),
+        gugun: z.string().optional().describe('구/군 (예: 강남구, 마포구)'),
+        dong: z.string().optional().describe('동 (예: 역삼동, 합정동)'),
+        limit: z.number().optional().default(50).describe('반환할 최대 매장 수 (기본값: 50)'),
       },
-    ],
+    },
+    handler: findStores as (args: unknown) => Promise<McpToolResponse>,
   };
 }

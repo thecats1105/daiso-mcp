@@ -2,17 +2,15 @@
  * 재고 확인 도구
  *
  * 다이소몰 API를 사용하여 매장별 재고를 확인합니다.
- * API: https://mapi.daisomall.co.kr/ms/msg/newIntSelStr
  */
 
-import type {
-  StoreInventory,
-  StoreInventoryResponse,
-  OnlineStockResponse,
-  McpToolResponse,
-} from '../types/index.js';
-import { fetchJson } from '../utils/fetch.js';
+import * as z from 'zod';
+import type { McpToolResponse, ToolRegistration } from '../../../core/types.js';
+import type { StoreInventory, StoreInventoryResponse, OnlineStockResponse } from '../types.js';
+import { DAISOMALL_API } from '../api.js';
+import { fetchJson } from '../../../utils/fetch.js';
 
+/** 도구 입력 인터페이스 */
 interface CheckInventoryArgs {
   productId: string;
   storeQuery?: string;
@@ -22,16 +20,15 @@ interface CheckInventoryArgs {
   pageSize?: number;
 }
 
-// 온라인 재고 조회
+/**
+ * 온라인 재고 조회
+ */
 async function fetchOnlineStock(productNo: string): Promise<number> {
-  const data = await fetchJson<OnlineStockResponse>(
-    'https://mapi.daisomall.co.kr/ms/msg/selOnlStck',
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pdNo: productNo }),
-    }
-  );
+  const data = await fetchJson<OnlineStockResponse>(DAISOMALL_API.ONLINE_STOCK, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ pdNo: productNo }),
+  });
 
   if (!data.success) {
     return 0;
@@ -40,7 +37,9 @@ async function fetchOnlineStock(productNo: string): Promise<number> {
   return data.data?.stck || 0;
 }
 
-// 매장별 재고 조회
+/**
+ * 매장별 재고 조회
+ */
 async function fetchStoreInventory(
   productNo: string,
   lat: number,
@@ -49,24 +48,21 @@ async function fetchStoreInventory(
   pageSize: number = 30,
   keyword: string = ''
 ): Promise<{ stores: StoreInventory[]; totalCount: number }> {
-  const data = await fetchJson<StoreInventoryResponse>(
-    'https://mapi.daisomall.co.kr/ms/msg/newIntSelStr',
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        keyword,
-        pdNo: productNo,
-        curLttd: lat,
-        curLitd: lng,
-        geolocationAgrYn: 'Y',
-        pkupYn: '',
-        intCd: '',
-        pageSize,
-        currentPage: page,
-      }),
-    }
-  );
+  const data = await fetchJson<StoreInventoryResponse>(DAISOMALL_API.STORE_INVENTORY, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      keyword,
+      pdNo: productNo,
+      curLttd: lat,
+      curLitd: lng,
+      geolocationAgrYn: 'Y',
+      pkupYn: '',
+      intCd: '',
+      pageSize,
+      currentPage: page,
+    }),
+  });
 
   if (!data.success || !data.data?.msStrVOList) {
     return { stores: [], totalCount: 0 };
@@ -97,7 +93,10 @@ async function fetchStoreInventory(
   return { stores, totalCount: data.data.intStrCont || stores.length };
 }
 
-export async function checkInventory(args: CheckInventoryArgs): Promise<McpToolResponse> {
+/**
+ * 재고 확인 핸들러
+ */
+async function checkInventory(args: CheckInventoryArgs): Promise<McpToolResponse> {
   const {
     productId,
     storeQuery = '',
@@ -136,11 +135,29 @@ export async function checkInventory(args: CheckInventoryArgs): Promise<McpToolR
   };
 
   return {
-    content: [
-      {
-        type: 'text',
-        text: JSON.stringify(result, null, 2),
+    content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+  };
+}
+
+/**
+ * 도구 등록 정보 생성
+ */
+export function createCheckInventoryTool(): ToolRegistration {
+  return {
+    name: 'daiso_check_inventory',
+    metadata: {
+      title: '재고 확인',
+      description:
+        '특정 제품의 매장별 재고를 확인합니다. 매장명/주소 검색 또는 위치 기반으로 조회합니다.',
+      inputSchema: {
+        productId: z.string().describe('제품 ID (daiso_search_products로 조회한 상품의 id)'),
+        storeQuery: z.string().optional().describe('매장 검색어 (매장명 또는 주소, 예: 안산 중앙역)'),
+        latitude: z.number().optional().default(37.5665).describe('위도 (기본값: 서울 시청 37.5665)'),
+        longitude: z.number().optional().default(126.978).describe('경도 (기본값: 서울 시청 126.978)'),
+        page: z.number().optional().default(1).describe('페이지 번호 (기본값: 1)'),
+        pageSize: z.number().optional().default(30).describe('페이지당 결과 수 (기본값: 30)'),
       },
-    ],
+    },
+    handler: checkInventory as (args: unknown) => Promise<McpToolResponse>,
   };
 }

@@ -77,7 +77,7 @@ https://mcp.aka.page
 
 ## 기능
 
-### search_products
+### daiso_search_products
 
 다이소 제품을 검색합니다.
 
@@ -89,7 +89,7 @@ https://mcp.aka.page
 
 <br>
 
-### find_stores
+### daiso_find_stores
 
 다이소 매장을 검색합니다.
 
@@ -103,7 +103,7 @@ https://mcp.aka.page
 
 <br>
 
-### check_inventory
+### daiso_check_inventory
 
 특정 제품의 매장별 재고를 확인합니다.
 
@@ -118,7 +118,7 @@ https://mcp.aka.page
 
 <br>
 
-### get_price_info
+### daiso_get_price_info
 
 제품의 가격 정보를 조회합니다.
 
@@ -137,13 +137,13 @@ https://mcp.aka.page
 
 ```
 사용자: 수납박스 검색해줘
-AI: search_products 도구로 제품 목록 조회
+AI: daiso_search_products 도구로 제품 목록 조회
 
 사용자: 이 제품 안산 중앙역 근처 매장에 재고 있어?
-AI: check_inventory 도구로 특정 매장 재고 확인
+AI: daiso_check_inventory 도구로 특정 매장 재고 확인
 
 사용자: 강남역 근처 다이소 매장 찾아줘
-AI: find_stores 도구로 매장 검색
+AI: daiso_find_stores 도구로 매장 검색
 ```
 
 <br>
@@ -191,16 +191,70 @@ npm run deploy
 ```
 daiso-mcp/
 ├── src/
-│   ├── index.ts              # MCP 서버 메인
-│   ├── tools/                # 도구 구현
-│   │   ├── searchProducts.ts
-│   │   ├── findStores.ts
-│   │   ├── checkInventory.ts
-│   │   └── getPriceInfo.ts
-│   ├── types/                # 타입 정의
+│   ├── index.ts              # MCP 서버 진입점
+│   ├── core/                 # 핵심 모듈
+│   │   ├── types.ts          # 공통 타입
+│   │   ├── interfaces.ts     # ServiceProvider 인터페이스
+│   │   └── registry.ts       # ServiceRegistry
+│   ├── services/             # 서비스 프로바이더
+│   │   └── daiso/            # 다이소 서비스
+│   │       ├── index.ts
+│   │       ├── types.ts
+│   │       ├── api.ts
+│   │       └── tools/
 │   └── utils/                # 유틸리티
 ├── wrangler.toml             # Cloudflare Workers 설정
 └── package.json
+```
+
+<br>
+
+---
+
+<br>
+
+## 확장 가능한 아키텍처
+
+이 프로젝트는 **플러그인 기반 아키텍처**로 설계되어 새로운 서비스를 쉽게 추가할 수 있습니다.
+
+### 핵심 컴포넌트
+
+| 컴포넌트 | 역할 |
+|:---------|:-----|
+| `ServiceProvider` | 모든 서비스가 구현해야 하는 인터페이스 |
+| `ServiceRegistry` | 서비스 등록 및 MCP 서버 연결 관리 |
+| `ToolRegistration` | 도구 메타데이터와 핸들러 정의 |
+
+### 새 서비스 추가 방법
+
+예: CU 편의점 서비스 추가
+
+```typescript
+// 1. src/services/cu/index.ts 생성
+import type { ServiceProvider } from '../../core/interfaces.js';
+
+class CuService implements ServiceProvider {
+  readonly metadata = {
+    id: 'cu',
+    name: 'CU 편의점',
+    version: '1.0.0',
+  };
+
+  getTools() {
+    return [/* cu_search_products, cu_find_stores 등 */];
+  }
+}
+
+export function createCuService(): ServiceProvider {
+  return new CuService();
+}
+```
+
+```typescript
+// 2. src/index.ts에 한 줄 추가
+import { createCuService } from './services/cu/index.js';
+
+registry.registerAll([createDaisoService, createCuService]);
 ```
 
 <br>

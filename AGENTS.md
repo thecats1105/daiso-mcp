@@ -258,26 +258,105 @@ npx wrangler secret put API_KEY
 
 ## 파일 구조
 
+### 플러그인 기반 아키텍처
+
+이 프로젝트는 **확장 가능한 플러그인 아키텍처**로 설계되었습니다. 다이소 외에 편의점, 백화점, 영화관 등 다양한 서비스를 쉽게 추가할 수 있습니다.
+
+#### 핵심 설계 원칙
+
+1. **ServiceProvider 인터페이스**: 모든 서비스가 구현해야 하는 표준 계약
+2. **ServiceRegistry**: 서비스를 동적으로 등록하고 MCP 서버에 연결
+3. **도구 이름 네임스페이스**: 서비스별 접두사 사용 (예: `daiso_`, `cu_`, `cgv_`)
+
 ### 디렉토리 구조
 
 ```
 daiso-mcp/
 ├── src/
-│   ├── index.ts              # 메인 서버 파일 (450줄 이하)
-│   ├── types/                # 타입 정의
-│   ├── tools/                # MCP 도구 구현
-│   │   ├── searchProducts.ts # 각 도구별 파일 (450줄 이하)
-│   │   ├── findStores.ts
-│   │   ├── checkInventory.ts
-│   │   └── getPriceInfo.ts
-│   ├── services/             # 비즈니스 로직
-│   ├── utils/                # 유틸리티 함수
-│   └── config/               # 설정 파일
+│   ├── index.ts              # MCP 서버 진입점 (450줄 이하)
+│   ├── core/                 # 핵심 모듈 (확장 기반)
+│   │   ├── types.ts          # 공통 타입 정의
+│   │   ├── interfaces.ts     # ServiceProvider 인터페이스
+│   │   └── registry.ts       # ServiceRegistry 클래스
+│   ├── services/             # 서비스 프로바이더
+│   │   └── daiso/            # 다이소 서비스
+│   │       ├── index.ts      # 서비스 팩토리
+│   │       ├── types.ts      # 다이소 전용 타입
+│   │       ├── api.ts        # API 엔드포인트 중앙화
+│   │       └── tools/        # 도구 구현
+│   │           ├── searchProducts.ts
+│   │           ├── findStores.ts
+│   │           ├── checkInventory.ts
+│   │           └── getPriceInfo.ts
+│   └── utils/                # 유틸리티 함수
 ├── examples/                 # 사용 예시
 ├── tests/                    # 테스트 파일
 ├── docs/                     # 문서
 └── scripts/                  # 빌드/배포 스크립트
 ```
+
+### 새 서비스 추가 방법
+
+새로운 서비스(예: CU 편의점)를 추가하려면:
+
+#### 1. 서비스 디렉토리 생성
+
+```
+src/services/cu/
+├── index.ts      # CuService 클래스 및 팩토리
+├── types.ts      # CU 전용 타입 정의
+├── api.ts        # CU API 엔드포인트
+└── tools/        # CU 도구 구현
+    ├── searchProducts.ts
+    └── findStores.ts
+```
+
+#### 2. ServiceProvider 구현
+
+```typescript
+// src/services/cu/index.ts
+import type { ServiceProvider } from '../../core/interfaces.js';
+import type { ToolRegistration } from '../../core/types.js';
+
+class CuService implements ServiceProvider {
+  readonly metadata = {
+    id: 'cu',
+    name: 'CU 편의점',
+    version: '1.0.0',
+    description: 'CU 편의점 제품 검색 및 매장 찾기',
+  };
+
+  getTools(): ToolRegistration[] {
+    return [
+      // cu_search_products, cu_find_stores 등
+    ];
+  }
+}
+
+export function createCuService(): ServiceProvider {
+  return new CuService();
+}
+```
+
+#### 3. 레지스트리에 등록
+
+```typescript
+// src/index.ts
+import { createDaisoService } from './services/daiso/index.js';
+import { createCuService } from './services/cu/index.js';
+
+registry.registerAll([createDaisoService, createCuService]);
+```
+
+### 도구 이름 규칙
+
+서비스별 도구는 접두사로 구분합니다:
+
+| 서비스 | 접두사 | 예시 |
+|:-------|:-------|:-----|
+| 다이소 | `daiso_` | `daiso_search_products` |
+| CU | `cu_` | `cu_search_products` |
+| CGV | `cgv_` | `cgv_search_movies` |
 
 ### 파일 명명 규칙
 

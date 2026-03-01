@@ -1,113 +1,39 @@
 /**
- * 다이소 MCP 서버
+ * 다중 서비스 MCP 서버
  *
- * Cloudflare Workers에서 실행되는 MCP 서버입니다.
- * 다이소 매장 검색, 제품 검색, 재고 확인 기능을 제공합니다.
+ * Cloudflare Workers에서 실행되는 플러그인 기반 MCP 서버입니다.
+ * 다이소, 편의점, 백화점 등 다양한 서비스를 확장할 수 있습니다.
  */
 
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
-import * as z from 'zod';
 
-import { searchProducts } from './tools/searchProducts.js';
-import { findStores } from './tools/findStores.js';
-import { checkInventory } from './tools/checkInventory.js';
-import { getPriceInfo } from './tools/getPriceInfo.js';
+import { ServiceRegistry } from './core/registry.js';
+import { createDaisoService } from './services/daiso/index.js';
 
-// MCP 서버 생성 함수
+// 서버 메타데이터
+const SERVER_NAME = 'multi-service-mcp';
+const SERVER_VERSION = '1.0.0';
+
+// 서비스 레지스트리 초기화
+const registry = new ServiceRegistry();
+
+// 서비스 등록 (새 서비스 추가 시 여기에 한 줄 추가)
+registry.registerAll([createDaisoService]);
+
+/**
+ * MCP 서버 생성 함수
+ */
 const createMcpServer = () => {
   const server = new McpServer({
-    name: 'daiso-mcp',
-    version: '1.0.0',
+    name: SERVER_NAME,
+    version: SERVER_VERSION,
   });
 
-  // 제품 검색 도구
-  server.registerTool(
-    'search_products',
-    {
-      title: '제품 검색',
-      description: '다이소 제품을 검색합니다. 키워드로 제품을 검색할 수 있습니다.',
-      inputSchema: {
-        query: z.string().describe('검색할 제품명 또는 키워드'),
-        page: z.number().optional().default(1).describe('페이지 번호 (기본값: 1)'),
-        pageSize: z.number().optional().default(30).describe('페이지당 결과 수 (기본값: 30)'),
-      },
-    },
-    async (args) => {
-      const result = await searchProducts(args);
-      return {
-        content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
-      };
-    }
-  );
-
-  // 매장 검색 도구
-  server.registerTool(
-    'find_stores',
-    {
-      title: '매장 검색',
-      description:
-        '다이소 매장을 검색합니다. 키워드(매장명, 주소) 또는 지역(시도/구군/동)으로 검색할 수 있습니다.',
-      inputSchema: {
-        keyword: z.string().optional().describe('검색할 매장명 또는 주소 키워드 (예: 강남, 홍대)'),
-        sido: z.string().optional().describe('시/도 (예: 서울, 경기, 부산)'),
-        gugun: z.string().optional().describe('구/군 (예: 강남구, 마포구)'),
-        dong: z.string().optional().describe('동 (예: 역삼동, 합정동)'),
-        limit: z.number().optional().default(50).describe('반환할 최대 매장 수 (기본값: 50)'),
-      },
-    },
-    async (args) => {
-      const result = await findStores(args);
-      return {
-        content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
-      };
-    }
-  );
-
-  // 재고 확인 도구
-  server.registerTool(
-    'check_inventory',
-    {
-      title: '재고 확인',
-      description:
-        '특정 제품의 매장별 재고를 확인합니다. 매장명/주소 검색 또는 위치 기반으로 조회합니다.',
-      inputSchema: {
-        productId: z.string().describe('제품 ID (search_products로 조회한 상품의 id)'),
-        storeQuery: z.string().optional().describe('매장 검색어 (매장명 또는 주소, 예: 안산 중앙역)'),
-        latitude: z.number().optional().default(37.5665).describe('위도 (기본값: 서울 시청 37.5665)'),
-        longitude: z.number().optional().default(126.978).describe('경도 (기본값: 서울 시청 126.978)'),
-        page: z.number().optional().default(1).describe('페이지 번호 (기본값: 1)'),
-        pageSize: z.number().optional().default(30).describe('페이지당 결과 수 (기본값: 30)'),
-      },
-    },
-    async (args) => {
-      const result = await checkInventory(args);
-      return {
-        content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
-      };
-    }
-  );
-
-  // 가격 정보 도구
-  server.registerTool(
-    'get_price_info',
-    {
-      title: '가격 정보',
-      description: '제품의 가격 정보를 조회합니다. 제품 ID 또는 제품명으로 조회할 수 있습니다.',
-      inputSchema: {
-        productId: z.string().optional().describe('제품 ID'),
-        productName: z.string().optional().describe('제품명 (productId가 없을 경우 사용)'),
-      },
-    },
-    async (args) => {
-      const result = await getPriceInfo(args);
-      return {
-        content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
-      };
-    }
-  );
+  // 레지스트리에 등록된 모든 서비스의 도구를 MCP 서버에 적용
+  registry.applyToServer(server);
 
   return server;
 };
@@ -128,14 +54,21 @@ app.use(
 
 // 기본 정보 엔드포인트 (GET 요청만)
 app.get('/', (c) => {
+  const services = registry.getServicesInfo();
+  const allTools = registry.getAllToolNames();
+
   return c.json({
-    name: 'daiso-mcp',
-    version: '1.0.0',
-    description: 'Daiso MCP Server for Cloudflare Workers',
+    name: SERVER_NAME,
+    version: SERVER_VERSION,
+    description: 'Multi-Service MCP Server for Cloudflare Workers',
     endpoints: {
       mcp: '/ 또는 /mcp (POST) - MCP 프로토콜 엔드포인트',
       health: '/health (GET) - 헬스 체크',
     },
+    services,
+    tools: allTools,
+    totalServices: services.length,
+    totalTools: allTools.length,
   });
 });
 

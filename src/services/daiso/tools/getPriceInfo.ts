@@ -2,36 +2,25 @@
  * 가격 정보 조회 도구
  *
  * 다이소몰 API를 사용하여 상품의 가격 정보를 조회합니다.
- * 상품 검색 API를 통해 가격 정보를 가져옵니다.
  */
 
-import type { ProductSearchResponse, McpToolResponse } from '../types/index.js';
-import { fetchJson } from '../utils/fetch.js';
+import * as z from 'zod';
+import type { McpToolResponse, ToolRegistration } from '../../../core/types.js';
+import type { ProductSearchResponse, ProductDoc } from '../types.js';
+import { DAISOMALL_API, getImageUrl } from '../api.js';
+import { fetchJson } from '../../../utils/fetch.js';
 
+/** 도구 입력 인터페이스 */
 interface GetPriceInfoArgs {
   productId?: string;
   productName?: string;
 }
 
-interface ProductDoc {
-  PD_NO: string;
-  PDNM: string;
-  EXH_PD_NM?: string;
-  PD_PRC: string;
-  ATCH_FILE_URL?: string;
-  BRND_NM?: string;
-  SOLD_OUT_YN?: string;
-}
-
-// 이미지 URL 생성
-function getImageUrl(path?: string): string | undefined {
-  if (!path) return undefined;
-  return `https://img.daisomall.co.kr${path}`;
-}
-
-// 상품 ID로 검색
+/**
+ * 상품 ID로 검색
+ */
 async function fetchProductById(productId: string): Promise<ProductDoc | null> {
-  const url = new URL('https://prdm.daisomall.co.kr/ssn/search/FindStoreGoods');
+  const url = new URL(DAISOMALL_API.SEARCH_PRODUCTS);
   url.searchParams.set('searchTerm', productId);
   url.searchParams.set('cntPerPage', '10');
   url.searchParams.set('pageNum', '1');
@@ -53,9 +42,11 @@ async function fetchProductById(productId: string): Promise<ProductDoc | null> {
   return docs.length > 0 ? docs[0] : null;
 }
 
-// 상품명으로 검색
+/**
+ * 상품명으로 검색
+ */
 async function fetchProductByName(productName: string): Promise<ProductDoc | null> {
-  const url = new URL('https://prdm.daisomall.co.kr/ssn/search/FindStoreGoods');
+  const url = new URL(DAISOMALL_API.SEARCH_PRODUCTS);
   url.searchParams.set('searchTerm', productName);
   url.searchParams.set('cntPerPage', '1');
   url.searchParams.set('pageNum', '1');
@@ -69,7 +60,10 @@ async function fetchProductByName(productName: string): Promise<ProductDoc | nul
   return data.resultSet.result[0].resultDocuments[0] as unknown as ProductDoc;
 }
 
-export async function getPriceInfo(args: GetPriceInfoArgs): Promise<McpToolResponse> {
+/**
+ * 가격 정보 조회 핸들러
+ */
+async function getPriceInfo(args: GetPriceInfoArgs): Promise<McpToolResponse> {
   const { productId, productName } = args;
 
   if (!productId && !productName) {
@@ -101,11 +95,24 @@ export async function getPriceInfo(args: GetPriceInfoArgs): Promise<McpToolRespo
   };
 
   return {
-    content: [
-      {
-        type: 'text',
-        text: JSON.stringify(result, null, 2),
+    content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+  };
+}
+
+/**
+ * 도구 등록 정보 생성
+ */
+export function createGetPriceInfoTool(): ToolRegistration {
+  return {
+    name: 'daiso_get_price_info',
+    metadata: {
+      title: '가격 정보',
+      description: '제품의 가격 정보를 조회합니다. 제품 ID 또는 제품명으로 조회할 수 있습니다.',
+      inputSchema: {
+        productId: z.string().optional().describe('제품 ID'),
+        productName: z.string().optional().describe('제품명 (productId가 없을 경우 사용)'),
       },
-    ],
+    },
+    handler: getPriceInfo as (args: unknown) => Promise<McpToolResponse>,
   };
 }

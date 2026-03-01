@@ -1,5 +1,5 @@
 /**
- * 다이소 MCP 서버 타입 정의
+ * 다이소 서비스 전용 타입 정의
  */
 
 // 매장 옵션 정보
@@ -125,10 +125,13 @@ export interface StoreInventoryResponse {
   success: boolean;
 }
 
-// MCP 도구 응답 형식
-export interface McpToolResponse {
-  content: Array<{
-    type: 'text';
-    text: string;
-  }>;
+// 상품 문서 타입 (가격 조회용)
+export interface ProductDoc {
+  PD_NO: string;
+  PDNM: string;
+  EXH_PD_NM?: string;
+  PD_PRC: string;
+  ATCH_FILE_URL?: string;
+  BRND_NM?: string;
+  SOLD_OUT_YN?: string;
 }
