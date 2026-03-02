@@ -7,7 +7,8 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "build": "tsc",
+    "build": "tsc && node scripts/generate-openapi.mjs",
+    "build:openapi": "node scripts/generate-openapi.mjs",
     "cf-typegen": "wrangler types",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -33,6 +34,7 @@
     "@cloudflare/workers-types": "^4.20250110.0",
     "@types/node": "^25.3.3",
     "@vitest/coverage-v8": "^4.0.18",
+    "playwright": "^1.58.2",
     "typescript": "^5.7.2",
     "vitest": "^4.0.18",
     "wrangler": "^4.69.0"

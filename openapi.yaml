@@ -1,27 +1,26 @@
+
 openapi: 3.1.0
 info:
   title: 다이소 MCP API
   description: |
-    다이소 제품 검색, 매장 찾기, 재고 확인을 위한 API입니다.
-
-    ## 주요 기능
-    - 🔍 **제품 검색**: 키워드로 다이소 제품 검색
-    - 🏪 **매장 찾기**: 지역/키워드로 매장 검색
-    - 📦 **재고 확인**: 온라인 및 오프라인 매장 재고 조회
-
-    ## 사용 팁
-    1. 한글 검색어는 URL 인코딩이 자동 처리됩니다
-    2. 재고 확인 시 먼저 제품 검색으로 제품 ID를 확인하세요
-    3. 위치 기반 재고 조회 시 lat, lng 파라미터를 활용하세요
+      다이소 제품 검색, 매장 찾기, 재고 확인을 위한 API입니다.
+      
+      ## 주요 기능
+      - 🔍 **제품 검색**: 키워드로 다이소 제품 검색
+      - 🏪 **매장 찾기**: 지역/키워드로 매장 검색
+      - 📦 **재고 확인**: 온라인 및 오프라인 매장 재고 조회
+      
+      ## 사용 팁
+      1. 한글 검색어는 URL 인코딩이 자동 처리됩니다
+      2. 재고 확인 시 먼저 제품 검색으로 제품 ID를 확인하세요
+      3. 위치 기반 재고 조회 시 lat, lng 파라미터를 활용하세요
   version: 1.0.0
   contact:
     name: GitHub Repository
-    url: https://github.com/hmmhmmhm/daiso-mcp
-
+    url: "https://github.com/hmmhmmhm/daiso-mcp"
 servers:
-  - url: https://mcp.aka.page
+  - url: "https://mcp.aka.page"
     description: Production Server
-
 paths:
   /api/daiso/products:
     get:
@@ -32,7 +31,7 @@ paths:
         - name: q
           in: query
           required: true
-          description: 검색 키워드 (예: 수납박스, 펜, 정리함)
+          description: "검색 키워드 (예: 수납박스, 펜, 정리함)"
           schema:
             type: string
           example: 수납박스
@@ -54,19 +53,18 @@ paths:
             minimum: 1
             maximum: 100
       responses:
-        '200':
+        200:
           description: 검색 성공
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProductSearchResponse'
-        '400':
+                $ref: "#/components/schemas/ProductSearchResponse"
+        400:
           description: 잘못된 요청 (검색어 누락)
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
+                $ref: "#/components/schemas/ErrorResponse"
   /api/daiso/products/{productId}:
     get:
       operationId: getProduct
@@ -79,21 +77,20 @@ paths:
           description: 제품 ID (제품 검색 결과의 id 값)
           schema:
             type: string
-          example: "1234567890"
+          example: 1234567890
       responses:
-        '200':
+        200:
           description: 조회 성공
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProductDetailResponse'
-        '404':
+                $ref: "#/components/schemas/ProductDetailResponse"
+        404:
           description: 제품을 찾을 수 없음
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
+                $ref: "#/components/schemas/ErrorResponse"
   /api/daiso/stores:
     get:
       operationId: findStores
@@ -103,28 +100,28 @@ paths:
         - name: keyword
           in: query
           required: false
-          description: 매장명 또는 주소 키워드 (예: 강남, 홍대, 안산)
+          description: "매장명 또는 주소 키워드 (예: 강남, 홍대, 안산)"
           schema:
             type: string
           example: 강남
         - name: sido
           in: query
           required: false
-          description: 시/도 (예: 서울, 경기, 부산)
+          description: "시/도 (예: 서울, 경기, 부산)"
           schema:
             type: string
           example: 서울
         - name: gugun
           in: query
           required: false
-          description: 구/군 (예: 강남구, 마포구)
+          description: "구/군 (예: 강남구, 마포구)"
           schema:
             type: string
           example: 강남구
         - name: dong
           in: query
           required: false
-          description: 동 (예: 역삼동, 합정동)
+          description: "동 (예: 역삼동, 합정동)"
           schema:
             type: string
         - name: limit
@@ -137,19 +134,18 @@ paths:
             minimum: 1
             maximum: 100
       responses:
-        '200':
+        200:
           description: 검색 성공
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/StoreSearchResponse'
-        '400':
+                $ref: "#/components/schemas/StoreSearchResponse"
+        400:
           description: 잘못된 요청 (필수 파라미터 누락)
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
+                $ref: "#/components/schemas/ErrorResponse"
   /api/daiso/inventory:
     get:
       operationId: checkInventory
@@ -162,11 +158,11 @@ paths:
           description: 제품 ID (제품 검색 결과의 id 값)
           schema:
             type: string
-          example: "1234567890"
+          example: 1234567890
         - name: lat
           in: query
           required: false
-          description: 위도 (기본값: 서울 시청 37.5665)
+          description: "위도 (기본값: 서울 시청 37.5665)"
           schema:
             type: number
             format: float
@@ -175,7 +171,7 @@ paths:
         - name: lng
           in: query
           required: false
-          description: 경도 (기본값: 서울 시청 126.978)
+          description: "경도 (기본값: 서울 시청 126.978)"
           schema:
             type: number
             format: float
@@ -184,7 +180,7 @@ paths:
         - name: keyword
           in: query
           required: false
-          description: 매장 검색어 (예: 안산, 강남)
+          description: "매장 검색어 (예: 안산, 강남)"
           schema:
             type: string
         - name: page
@@ -205,19 +201,18 @@ paths:
             minimum: 1
             maximum: 100
       responses:
-        '200':
+        200:
           description: 조회 성공
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InventoryResponse'
-        '400':
+                $ref: "#/components/schemas/InventoryResponse"
+        400:
           description: 잘못된 요청 (제품 ID 누락)
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
+                $ref: "#/components/schemas/ErrorResponse"
 components:
   schemas:
     Product:
@@ -227,11 +222,11 @@ components:
         id:
           type: string
           description: 제품 ID
-          example: "1234567890"
+          example: 1234567890
         name:
           type: string
           description: 제품명
-          example: "PP 수납박스 대형"
+          example: PP 수납박스 대형
         price:
           type: integer
           description: 가격 (원)
@@ -252,7 +247,6 @@ components:
           type: boolean
           description: 매장 픽업 가능 여부
           example: true
-
     ProductDetail:
       type: object
       description: 제품 상세 정보
@@ -269,7 +263,7 @@ components:
         currency:
           type: string
           description: 통화
-          example: "KRW"
+          example: KRW
         imageUrl:
           type: string
           description: 제품 이미지 URL
@@ -282,7 +276,6 @@ components:
         isNew:
           type: boolean
           description: 신상품 여부
-
     Store:
       type: object
       description: 매장 정보
@@ -290,15 +283,15 @@ components:
         name:
           type: string
           description: 매장명
-          example: "다이소 강남역점"
+          example: 다이소 강남역점
         phone:
           type: string
           description: 전화번호
-          example: "02-1234-5678"
+          example: 02-1234-5678
         address:
           type: string
           description: 주소
-          example: "서울특별시 강남구 강남대로 123"
+          example: 서울특별시 강남구 강남대로 123
         lat:
           type: number
           format: float
@@ -330,7 +323,6 @@ components:
             taxFree:
               type: boolean
               description: 면세 가능 여부
-
     StoreInventory:
       type: object
       description: 매장 재고 정보
@@ -338,18 +330,18 @@ components:
         storeCode:
           type: string
           description: 매장 코드
-          example: "ST001"
+          example: ST001
         storeName:
           type: string
           description: 매장명
-          example: "다이소 강남역점"
+          example: 다이소 강남역점
         address:
           type: string
           description: 주소
         distance:
           type: string
           description: 거리
-          example: "0.5km"
+          example: 0.5km
         quantity:
           type: integer
           description: 재고 수량
@@ -361,7 +353,6 @@ components:
               type: boolean
             pickup:
               type: boolean
-
     ProductSearchResponse:
       type: object
       properties:
@@ -374,7 +365,7 @@ components:
             products:
               type: array
               items:
-                $ref: '#/components/schemas/Product'
+                $ref: "#/components/schemas/Product"
         meta:
           type: object
           properties:
@@ -387,7 +378,6 @@ components:
             pageSize:
               type: integer
               description: 페이지당 결과 수
-
     ProductDetailResponse:
       type: object
       properties:
@@ -395,8 +385,7 @@ components:
           type: boolean
           example: true
         data:
-          $ref: '#/components/schemas/ProductDetail'
-
+          $ref: "#/components/schemas/ProductDetail"
     StoreSearchResponse:
       type: object
       properties:
@@ -409,14 +398,13 @@ components:
             stores:
               type: array
               items:
-                $ref: '#/components/schemas/Store'
+                $ref: "#/components/schemas/Store"
         meta:
           type: object
           properties:
             total:
               type: integer
               description: 전체 결과 수
-
     InventoryResponse:
       type: object
       properties:
@@ -454,7 +442,7 @@ components:
                 stores:
                   type: array
                   items:
-                    $ref: '#/components/schemas/StoreInventory'
+                    $ref: "#/components/schemas/StoreInventory"
         meta:
           type: object
           properties:
@@ -464,7 +452,6 @@ components:
               type: integer
             pageSize:
               type: integer
-
     ErrorResponse:
       type: object
       properties:
@@ -477,8 +464,8 @@ components:
             code:
               type: string
               description: 에러 코드
-              example: "MISSING_QUERY"
+              example: MISSING_QUERY
             message:
               type: string
               description: 에러 메시지
-              example: "검색어(q)를 입력해주세요."
+              example: 검색어(q)를 입력해주세요.
