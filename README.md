@@ -78,6 +78,16 @@ https://mcp.aka.page
 
 <br>
 
+### ![Claude Code](https://img.shields.io/badge/Claude_Code-D4A27F?logo=anthropic&logoColor=white)
+
+> Claude Code CLI에서 MCP 서버 추가
+
+```bash
+claude mcp add daiso-mcp https://mcp.aka.page --transport sse
+```
+
+<br>
+
 ### ![Grok](https://img.shields.io/badge/Grok-000000?logo=x&logoColor=white)
 
 > 웹 및 모바일 앱 모두 지원
