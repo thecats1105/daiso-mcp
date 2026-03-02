@@ -61,6 +61,8 @@ https://mcp.aka.page
 ```
 다이소 mcp를 사용해서 수납박스 검색해줘
 다이소 mcp를 사용해서 강남역 근처 매장 찾아줘
+올리브영 mcp를 사용해서 명동 근처 매장 찾아줘
+올리브영 mcp를 사용해서 선크림 재고 확인해줘
 ```
 
 참고: [Claude Remote MCP 가이드](https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp)
@@ -215,6 +217,8 @@ MCP를 지원하지 않는 서비스를 위한 GET 기반 REST API입니다.
 | `GET /api/daiso/products/:id` | 제품 상세 정보 |
 | `GET /api/daiso/stores` | 매장 검색 |
 | `GET /api/daiso/inventory` | 재고 확인 |
+| `GET /api/oliveyoung/stores` | 올리브영 매장 검색 |
+| `GET /api/oliveyoung/inventory` | 올리브영 재고 확인 |
 
 ### 제품 검색
 
@@ -257,6 +261,37 @@ GET /api/daiso/inventory?productId={제품ID}&lat={위도}&lng={경도}
 | `page` | | 페이지 번호 (기본값: 1) |
 | `pageSize` | | 페이지당 결과 수 (기본값: 30) |
 
+### 올리브영 매장 검색
+
+```
+GET /api/oliveyoung/stores?keyword={키워드}&lat={위도}&lng={경도}
+```
+
+| 파라미터 | 필수 | 설명 |
+|:---------|:----:|:-----|
+| `keyword` | | 매장명/지역 키워드 (예: 명동, 강남) |
+| `lat` | | 위도 (기본값: 37.5665) |
+| `lng` | | 경도 (기본값: 126.978) |
+| `pageIdx` | | 페이지 번호 (기본값: 1) |
+| `limit` | | 최대 결과 수 (기본값: 20) |
+
+### 올리브영 재고 확인
+
+```
+GET /api/oliveyoung/inventory?keyword={검색어}&lat={위도}&lng={경도}
+```
+
+| 파라미터 | 필수 | 설명 |
+|:---------|:----:|:-----|
+| `keyword` | O | 검색 키워드 (예: 선크림, 립밤) |
+| `lat` | | 위도 (기본값: 37.5665) |
+| `lng` | | 경도 (기본값: 126.978) |
+| `storeKeyword` | | 주변 매장 필터 키워드 |
+| `page` | | 페이지 번호 (기본값: 1) |
+| `size` | | 페이지당 결과 수 (기본값: 20) |
+| `sort` | | 정렬 코드 (기본값: 01) |
+| `includeSoldOut` | | 품절 포함 여부 (기본값: false) |
+
 ### 응답 형식
 
 ```json
@@ -284,6 +319,12 @@ AI: daiso_check_inventory 도구로 특정 매장 재고 확인
 
 사용자: 강남역 근처 다이소 매장 찾아줘
 AI: daiso_find_stores 도구로 매장 검색
+
+사용자: 명동 근처 올리브영 매장 찾아줘
+AI: oliveyoung_find_nearby_stores 도구로 주변 매장 검색
+
+사용자: 올리브영 선크림 재고 확인해줘
+AI: oliveyoung_check_inventory 도구로 재고/매장 정보 조회
 ```
 
 <br>
