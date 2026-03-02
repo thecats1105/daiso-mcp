@@ -13,6 +13,7 @@ import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/
 import { ServiceRegistry } from './core/registry.js';
 import { createDaisoService } from './services/daiso/index.js';
 import { createPromptResponse } from './pages/prompt.js';
+import { createOpenApiJsonResponse, createOpenApiYamlResponse } from './pages/openapi.js';
 import {
   handleSearchProducts,
   handleGetProduct,
@@ -94,6 +95,17 @@ app.get('/health', (c) => c.json({ status: 'ok' }));
 app.get('/prompt', (c) => {
   const baseUrl = new URL(c.req.url).origin;
   return createPromptResponse(baseUrl);
+});
+
+// OpenAPI 스펙 엔드포인트 (ChatGPT GPTs 등록용)
+app.get('/openapi.json', (c) => {
+  const baseUrl = new URL(c.req.url).origin;
+  return createOpenApiJsonResponse(baseUrl);
+});
+
+app.get('/openapi.yaml', (c) => {
+  const baseUrl = new URL(c.req.url).origin;
+  return createOpenApiYamlResponse(baseUrl);
 });
 
 // GET API 엔드포인트 (MCP 미지원 에이전트용)
