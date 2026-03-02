@@ -28,6 +28,10 @@ describe('generatePromptText', () => {
 
     // 재고 확인 API
     expect(text).toContain('/api/daiso/inventory');
+
+    // 올리브영 API
+    expect(text).toContain('/api/oliveyoung/stores');
+    expect(text).toContain('/api/oliveyoung/inventory');
   });
 
   it('파라미터 설명을 포함한다', () => {
@@ -58,6 +62,8 @@ describe('generatePromptText', () => {
     expect(text).toContain('MISSING_PARAMS');
     expect(text).toContain('NOT_FOUND');
     expect(text).toContain('SEARCH_FAILED');
+    expect(text).toContain('OLIVEYOUNG_STORE_SEARCH_FAILED');
+    expect(text).toContain('OLIVEYOUNG_INVENTORY_CHECK_FAILED');
   });
 
   it('MCP 연결 정보를 포함한다', () => {

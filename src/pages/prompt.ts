@@ -186,6 +186,48 @@ Base URL: ${baseUrl}
 
 ---
 
+### 5. 올리브영 매장 찾기
+
+**설명**: 위치 기반으로 주변 올리브영 매장을 검색합니다.
+
+**URL**: ${baseUrl}/api/oliveyoung/stores?keyword={키워드}
+
+**선택 파라미터**:
+- keyword: 매장명/지역 키워드 (예: 명동, 강남)
+- lat: 위도 (기본값: 37.5665)
+- lng: 경도 (기본값: 126.978)
+- pageIdx: 페이지 번호 (기본값: 1)
+- limit: 최대 결과 수 (기본값: 20)
+
+**예시**:
+- ${baseUrl}/api/oliveyoung/stores?keyword=명동
+- ${baseUrl}/api/oliveyoung/stores?lat=37.498&lng=127.027&limit=5
+
+---
+
+### 6. 올리브영 재고 확인
+
+**설명**: 상품 키워드 기준 올리브영 재고를 조회하고 주변 매장 목록을 함께 반환합니다.
+
+**URL**: ${baseUrl}/api/oliveyoung/inventory?keyword={검색어}
+
+**필수 파라미터**:
+- keyword: 상품 검색어 (예: 선크림, 립밤)
+
+**선택 파라미터**:
+- lat: 위도 (기본값: 37.5665)
+- lng: 경도 (기본값: 126.978)
+- storeKeyword: 매장 필터 키워드
+- page: 상품 검색 페이지 (기본값: 1)
+- size: 페이지당 결과 수 (기본값: 20)
+- includeSoldOut: 품절 포함 여부 (기본값: false)
+
+**예시**:
+- ${baseUrl}/api/oliveyoung/inventory?keyword=선크림
+- ${baseUrl}/api/oliveyoung/inventory?keyword=립밤&storeKeyword=명동
+
+---
+
 ## 응답 형식
 
 ### 성공 응답
@@ -221,6 +263,8 @@ Base URL: ${baseUrl}
 | NOT_FOUND | 결과를 찾을 수 없음 |
 | SEARCH_FAILED | 검색 실패 |
 | FETCH_FAILED | 데이터 조회 실패 |
+| OLIVEYOUNG_STORE_SEARCH_FAILED | 올리브영 매장 조회 실패 |
+| OLIVEYOUNG_INVENTORY_CHECK_FAILED | 올리브영 재고 조회 실패 |
 
 ---
 

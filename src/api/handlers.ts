@@ -14,6 +14,16 @@ import {
 } from '../services/daiso/tools/checkInventory.js';
 import { fetchProductById } from '../services/daiso/tools/getPriceInfo.js';
 import { getImageUrl } from '../services/daiso/api.js';
+import {
+  fetchOliveyoungProducts,
+  fetchOliveyoungStores,
+} from '../services/oliveyoung/client.js';
+
+interface AppBindings {
+  ZYTE_API_KEY?: string;
+}
+
+type ApiContext = Context<{ Bindings: AppBindings }>;
 
 /** API 응답 형식 */
 interface ApiResponse<T> {
@@ -33,7 +43,7 @@ interface ApiResponse<T> {
 /**
  * 성공 응답 생성
  */
-function successResponse<T>(c: Context, data: T, meta?: ApiResponse<T>['meta']) {
+function successResponse<T>(c: ApiContext, data: T, meta?: ApiResponse<T>['meta']) {
   return c.json<ApiResponse<T>>({
     success: true,
     data,
@@ -44,7 +54,7 @@ function successResponse<T>(c: Context, data: T, meta?: ApiResponse<T>['meta']) 
 /**
  * 에러 응답 생성
  */
-function errorResponse(c: Context, code: string, message: string, status: 400 | 404 | 500 = 400) {
+function errorResponse(c: ApiContext, code: string, message: string, status: 400 | 404 | 500 = 400) {
   return c.json<ApiResponse<never>>(
     {
       success: false,
@@ -58,7 +68,7 @@ function errorResponse(c: Context, code: string, message: string, status: 400 | 
  * 제품 검색 API 핸들러
  * GET /api/daiso/products?q={검색어}&page={페이지}&pageSize={개수}
  */
-export async function handleSearchProducts(c: Context) {
+export async function handleSearchProducts(c: ApiContext) {
   const query = c.req.query('q');
   const page = parseInt(c.req.query('page') || '1');
   const pageSize = parseInt(c.req.query('pageSize') || '30');
@@ -81,7 +91,7 @@ export async function handleSearchProducts(c: Context) {
  * 제품 상세 정보 API 핸들러
  * GET /api/daiso/products/:id
  */
-export async function handleGetProduct(c: Context) {
+export async function handleGetProduct(c: ApiContext) {
   const productId = c.req.param('id');
 
   if (!productId) {
@@ -117,7 +127,7 @@ export async function handleGetProduct(c: Context) {
  * 매장 검색 API 핸들러
  * GET /api/daiso/stores?keyword={키워드}&sido={시도}&gugun={구군}&dong={동}&limit={개수}
  */
-export async function handleFindStores(c: Context) {
+export async function handleFindStores(c: ApiContext) {
   const keyword = c.req.query('keyword');
   const sido = c.req.query('sido');
   const gugun = c.req.query('gugun');
@@ -143,7 +153,7 @@ export async function handleFindStores(c: Context) {
  * 재고 확인 API 핸들러
  * GET /api/daiso/inventory?productId={제품ID}&lat={위도}&lng={경도}&keyword={매장검색어}
  */
-export async function handleCheckInventory(c: Context) {
+export async function handleCheckInventory(c: ApiContext) {
   const productId = c.req.query('productId');
   const lat = parseFloat(c.req.query('lat') || '37.5665');
   const lng = parseFloat(c.req.query('lng') || '126.978');
@@ -178,5 +188,111 @@ export async function handleCheckInventory(c: Context) {
   } catch (error) {
     const message = error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.';
     return errorResponse(c, 'INVENTORY_CHECK_FAILED', message, 500);
+  }
+}
+
+/**
+ * 올리브영 매장 검색 API 핸들러
+ * GET /api/oliveyoung/stores?keyword={키워드}&lat={위도}&lng={경도}
+ */
+export async function handleOliveyoungFindStores(c: ApiContext) {
+  const keyword = c.req.query('keyword') || '';
+  const lat = parseFloat(c.req.query('lat') || '37.5665');
+  const lng = parseFloat(c.req.query('lng') || '126.978');
+  const pageIdx = parseInt(c.req.query('pageIdx') || '1');
+  const limit = parseInt(c.req.query('limit') || '20');
+
+  try {
+    const result = await fetchOliveyoungStores(
+      {
+        latitude: lat,
+        longitude: lng,
+        pageIdx,
+        searchWords: keyword,
+      },
+      {
+        apiKey: c.env.ZYTE_API_KEY,
+      }
+    );
+
+    return successResponse(
+      c,
+      {
+        stores: result.stores.slice(0, limit),
+      },
+      { total: result.totalCount, page: pageIdx, pageSize: limit }
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.';
+    return errorResponse(c, 'OLIVEYOUNG_STORE_SEARCH_FAILED', message, 500);
+  }
+}
+
+/**
+ * 올리브영 재고 확인 API 핸들러
+ * GET /api/oliveyoung/inventory?keyword={검색어}&lat={위도}&lng={경도}
+ */
+export async function handleOliveyoungCheckInventory(c: ApiContext) {
+  const keyword = c.req.query('keyword');
+  const lat = parseFloat(c.req.query('lat') || '37.5665');
+  const lng = parseFloat(c.req.query('lng') || '126.978');
+  const storeKeyword = c.req.query('storeKeyword') || '';
+  const page = parseInt(c.req.query('page') || '1');
+  const size = parseInt(c.req.query('size') || '20');
+  const sort = c.req.query('sort') || '01';
+  const includeSoldOut = c.req.query('includeSoldOut') === 'true';
+  const storeLimit = parseInt(c.req.query('storeLimit') || '10');
+
+  if (!keyword || keyword.trim().length === 0) {
+    return errorResponse(c, 'MISSING_QUERY', '검색어(keyword)를 입력해주세요.');
+  }
+
+  try {
+    const [storeResult, productResult] = await Promise.all([
+      fetchOliveyoungStores(
+        {
+          latitude: lat,
+          longitude: lng,
+          pageIdx: 1,
+          searchWords: storeKeyword,
+        },
+        {
+          apiKey: c.env.ZYTE_API_KEY,
+        }
+      ),
+      fetchOliveyoungProducts(
+        {
+          keyword,
+          page,
+          size,
+          sort,
+          includeSoldOut,
+        },
+        {
+          apiKey: c.env.ZYTE_API_KEY,
+        }
+      ),
+    ]);
+
+    return successResponse(
+      c,
+      {
+        keyword,
+        location: { latitude: lat, longitude: lng },
+        nearbyStores: {
+          totalCount: storeResult.totalCount,
+          stores: storeResult.stores.slice(0, storeLimit),
+        },
+        inventory: {
+          totalCount: productResult.totalCount,
+          nextPage: productResult.nextPage,
+          products: productResult.products,
+        },
+      },
+      { total: productResult.totalCount, page, pageSize: size }
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.';
+    return errorResponse(c, 'OLIVEYOUNG_INVENTORY_CHECK_FAILED', message, 500);
   }
 }

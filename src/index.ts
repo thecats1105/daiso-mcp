@@ -21,6 +21,8 @@ import {
   handleGetProduct,
   handleFindStores,
   handleCheckInventory,
+  handleOliveyoungFindStores,
+  handleOliveyoungCheckInventory,
 } from './api/handlers.js';
 
 // 서버 메타데이터
@@ -137,6 +139,8 @@ app.get('/api/daiso/products', handleSearchProducts);
 app.get('/api/daiso/products/:id', handleGetProduct);
 app.get('/api/daiso/stores', handleFindStores);
 app.get('/api/daiso/inventory', handleCheckInventory);
+app.get('/api/oliveyoung/stores', handleOliveyoungFindStores);
+app.get('/api/oliveyoung/inventory', handleOliveyoungCheckInventory);
 
 // MCP 엔드포인트
 app.all('/mcp', async (c) => {

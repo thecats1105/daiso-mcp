@@ -213,6 +213,150 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /api/oliveyoung/stores:
+    get:
+      operationId: oliveyoungFindStores
+      summary: 올리브영 매장 검색
+      description: 위치(위도/경도)와 키워드로 올리브영 매장을 검색합니다.
+      parameters:
+        - name: keyword
+          in: query
+          required: false
+          description: "매장명 또는 지역 키워드 (예: 명동, 강남)"
+          schema:
+            type: string
+          example: 명동
+        - name: lat
+          in: query
+          required: false
+          description: "위도 (기본값: 서울 시청 37.5665)"
+          schema:
+            type: number
+            format: float
+            default: 37.5665
+        - name: lng
+          in: query
+          required: false
+          description: "경도 (기본값: 서울 시청 126.978)"
+          schema:
+            type: number
+            format: float
+            default: 126.978
+        - name: pageIdx
+          in: query
+          required: false
+          description: 매장 검색 페이지 번호
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: limit
+          in: query
+          required: false
+          description: 최대 결과 수
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+      responses:
+        200:
+          description: 검색 성공
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OliveyoungStoreSearchResponse"
+        500:
+          description: 올리브영 API 호출 실패
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/oliveyoung/inventory:
+    get:
+      operationId: oliveyoungCheckInventory
+      summary: 올리브영 재고 확인
+      description: 상품 키워드로 올리브영 재고를 검색하고 주변 매장 정보를 함께 조회합니다.
+      parameters:
+        - name: keyword
+          in: query
+          required: true
+          description: 재고를 확인할 상품 키워드
+          schema:
+            type: string
+          example: 선크림
+        - name: lat
+          in: query
+          required: false
+          description: "위도 (기본값: 서울 시청 37.5665)"
+          schema:
+            type: number
+            format: float
+            default: 37.5665
+        - name: lng
+          in: query
+          required: false
+          description: "경도 (기본값: 서울 시청 126.978)"
+          schema:
+            type: number
+            format: float
+            default: 126.978
+        - name: storeKeyword
+          in: query
+          required: false
+          description: 주변 매장 필터 키워드
+          schema:
+            type: string
+        - name: page
+          in: query
+          required: false
+          description: 상품 검색 페이지 번호
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: size
+          in: query
+          required: false
+          description: 페이지당 결과 수
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+        - name: sort
+          in: query
+          required: false
+          description: 정렬 코드
+          schema:
+            type: string
+            default: 01
+        - name: includeSoldOut
+          in: query
+          required: false
+          description: 품절 포함 여부 (true/false)
+          schema:
+            type: boolean
+            default: false
+      responses:
+        200:
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OliveyoungInventoryResponse"
+        400:
+          description: 잘못된 요청 (검색어 누락)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        500:
+          description: 올리브영 API 호출 실패
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 components:
   schemas:
     Product:
@@ -443,6 +587,130 @@ components:
                   type: array
                   items:
                     $ref: "#/components/schemas/StoreInventory"
+        meta:
+          type: object
+          properties:
+            total:
+              type: integer
+            page:
+              type: integer
+            pageSize:
+              type: integer
+    OliveyoungStore:
+      type: object
+      description: 올리브영 매장 정보
+      properties:
+        storeCode:
+          type: string
+          example: D176
+        storeName:
+          type: string
+          example: 올리브영 명동 타운
+        address:
+          type: string
+          example: 서울특별시 중구 명동길 53
+        latitude:
+          type: number
+          format: float
+          example: 37.56409158
+        longitude:
+          type: number
+          format: float
+          example: 126.9851771
+        pickupYn:
+          type: boolean
+          example: false
+        o2oRemainQuantity:
+          type: integer
+          example: 0
+    OliveyoungProduct:
+      type: object
+      description: 올리브영 상품 재고 정보
+      properties:
+        goodsNumber:
+          type: string
+          example: A000000200614
+        goodsName:
+          type: string
+          example: 달바 퍼플 톤업 선크림 듀오 기획
+        priceToPay:
+          type: integer
+          example: 32130
+        originalPrice:
+          type: integer
+          example: 51000
+        discountRate:
+          type: integer
+          example: 37
+        o2oStockFlag:
+          type: boolean
+          example: true
+        o2oRemainQuantity:
+          type: integer
+          example: 0
+    OliveyoungStoreSearchResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            stores:
+              type: array
+              items:
+                $ref: "#/components/schemas/OliveyoungStore"
+        meta:
+          type: object
+          properties:
+            total:
+              type: integer
+            page:
+              type: integer
+            pageSize:
+              type: integer
+    OliveyoungInventoryResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            keyword:
+              type: string
+              example: 선크림
+            location:
+              type: object
+              properties:
+                latitude:
+                  type: number
+                  format: float
+                longitude:
+                  type: number
+                  format: float
+            nearbyStores:
+              type: object
+              properties:
+                totalCount:
+                  type: integer
+                stores:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/OliveyoungStore"
+            inventory:
+              type: object
+              properties:
+                totalCount:
+                  type: integer
+                nextPage:
+                  type: boolean
+                products:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/OliveyoungProduct"
         meta:
           type: object
           properties:

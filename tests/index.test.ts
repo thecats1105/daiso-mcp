@@ -195,6 +195,88 @@ describe('API 엔드포인트', () => {
       expect(data.error.code).toBe('MISSING_PRODUCT_ID');
     });
   });
+
+  describe('GET /api/oliveyoung/stores', () => {
+    it('매장 검색 결과를 반환한다', async () => {
+      const encoded = Buffer.from(
+        JSON.stringify({
+          status: 'SUCCESS',
+          data: {
+            totalCount: 1,
+            storeList: [{ storeCode: 'D176', storeName: '올리브영 명동 타운' }],
+          },
+        }),
+        'utf8'
+      ).toString('base64');
+
+      mockFetch.mockResolvedValue(
+        new Response(JSON.stringify({ statusCode: 200, httpResponseBody: encoded }))
+      );
+
+      const res = await app.request(
+        '/api/oliveyoung/stores?keyword=명동',
+        undefined,
+        { ZYTE_API_KEY: 'test-key' }
+      );
+
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.success).toBe(true);
+      expect(data.data.stores).toHaveLength(1);
+    });
+  });
+
+  describe('GET /api/oliveyoung/inventory', () => {
+    it('재고 정보를 반환한다', async () => {
+      const storeEncoded = Buffer.from(
+        JSON.stringify({
+          status: 'SUCCESS',
+          data: { totalCount: 1, storeList: [{ storeCode: 'D176', storeName: '올리브영 명동 타운' }] },
+        }),
+        'utf8'
+      ).toString('base64');
+
+      const productEncoded = Buffer.from(
+        JSON.stringify({
+          status: 'SUCCESS',
+          data: {
+            totalCount: 1,
+            nextPage: false,
+            serachList: [{ goodsNumber: 'A1', goodsName: '선크림 A', priceToPay: 10000 }],
+          },
+        }),
+        'utf8'
+      ).toString('base64');
+
+      mockFetch
+        .mockResolvedValueOnce(
+          new Response(JSON.stringify({ statusCode: 200, httpResponseBody: storeEncoded }))
+        )
+        .mockResolvedValueOnce(
+          new Response(JSON.stringify({ statusCode: 200, httpResponseBody: productEncoded }))
+        );
+
+      const res = await app.request(
+        '/api/oliveyoung/inventory?keyword=선크림',
+        undefined,
+        { ZYTE_API_KEY: 'test-key' }
+      );
+
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.success).toBe(true);
+      expect(data.data.keyword).toBe('선크림');
+    });
+
+    it('keyword 없이 요청하면 에러를 반환한다', async () => {
+      const res = await app.request('/api/oliveyoung/inventory');
+
+      expect(res.status).toBe(400);
+      const data = await res.json();
+      expect(data.success).toBe(false);
+      expect(data.error.code).toBe('MISSING_QUERY');
+    });
+  });
 });
 
 describe('CORS', () => {
