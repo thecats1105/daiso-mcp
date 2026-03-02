@@ -79,7 +79,7 @@ https://mcp.aka.page
 
 ### ![Grok](https://img.shields.io/badge/Grok-000000?logo=x&logoColor=white)
 
-> 모바일 앱에서만 동작 (웹 버전 미지원)
+> 웹 및 모바일 앱 모두 지원
 
 **프롬프트 페이지 URL:**
 ```
