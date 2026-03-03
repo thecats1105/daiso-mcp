@@ -32,6 +32,11 @@ describe('generatePromptText', () => {
     // 올리브영 API
     expect(text).toContain('/api/oliveyoung/stores');
     expect(text).toContain('/api/oliveyoung/inventory');
+
+    // 메가박스 API
+    expect(text).toContain('/api/megabox/theaters');
+    expect(text).toContain('/api/megabox/movies');
+    expect(text).toContain('/api/megabox/seats');
   });
 
   it('파라미터 설명을 포함한다', () => {
@@ -64,6 +69,9 @@ describe('generatePromptText', () => {
     expect(text).toContain('SEARCH_FAILED');
     expect(text).toContain('OLIVEYOUNG_STORE_SEARCH_FAILED');
     expect(text).toContain('OLIVEYOUNG_INVENTORY_CHECK_FAILED');
+    expect(text).toContain('MEGABOX_THEATER_SEARCH_FAILED');
+    expect(text).toContain('MEGABOX_MOVIE_LIST_FAILED');
+    expect(text).toContain('MEGABOX_SEAT_LIST_FAILED');
   });
 
   it('MCP 연결 정보를 포함한다', () => {
@@ -76,6 +84,9 @@ describe('generatePromptText', () => {
     expect(text).toContain('daiso_get_price_info');
     expect(text).toContain('oliveyoung_find_nearby_stores');
     expect(text).toContain('oliveyoung_check_inventory');
+    expect(text).toContain('megabox_find_nearby_theaters');
+    expect(text).toContain('megabox_list_now_showing');
+    expect(text).toContain('megabox_get_remaining_seats');
   });
 
   it('사용 팁을 포함한다', () => {

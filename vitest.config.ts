@@ -37,7 +37,7 @@ export default defineConfig({
         'src/**/*.d.ts',
         'src/core/types.ts', // 타입만 정의
         'src/core/interfaces.ts', // 인터페이스만 정의
-        'src/services/daiso/types.ts', // 타입만 정의
+        'src/services/**/types.ts', // 타입만 정의
       ],
 
       // 커버리지 임계값 (100% 목표)

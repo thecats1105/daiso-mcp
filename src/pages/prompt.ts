@@ -228,6 +228,62 @@ Base URL: ${baseUrl}
 
 ---
 
+### 7. 메가박스 주변 지점 찾기
+
+**설명**: 사용자 좌표 기준으로 메가박스 지점을 거리순으로 조회합니다.
+
+**URL**: ${baseUrl}/api/megabox/theaters?lat={위도}&lng={경도}
+
+**선택 파라미터**:
+- lat: 위도 (기본값: 37.5665)
+- lng: 경도 (기본값: 126.978)
+- playDate: 조회 날짜 (YYYYMMDD, 기본값: 오늘)
+- areaCode: 지역 코드 (기본값: 11, 서울)
+- limit: 최대 결과 수 (기본값: 10)
+
+**예시**:
+- ${baseUrl}/api/megabox/theaters?lat=37.4982&lng=127.0264
+- ${baseUrl}/api/megabox/theaters?areaCode=11&limit=5
+
+---
+
+### 8. 메가박스 영화/회차 목록
+
+**설명**: 날짜/지점 조건으로 메가박스 영화와 상영 회차를 조회합니다.
+
+**URL**: ${baseUrl}/api/megabox/movies?playDate={YYYYMMDD}
+
+**선택 파라미터**:
+- playDate: 조회 날짜 (YYYYMMDD, 기본값: 오늘)
+- theaterId: 지점 ID (예: 1372)
+- movieId: 영화 ID (예: 25104500)
+- areaCode: 지역 코드 (기본값: 11)
+
+**예시**:
+- ${baseUrl}/api/megabox/movies?playDate=20260304&theaterId=1372
+- ${baseUrl}/api/megabox/movies?playDate=20260304&movieId=25104500
+
+---
+
+### 9. 메가박스 잔여 좌석 조회
+
+**설명**: 영화/지점/날짜 기준으로 회차별 잔여 좌석 수를 조회합니다.
+
+**URL**: ${baseUrl}/api/megabox/seats?playDate={YYYYMMDD}
+
+**선택 파라미터**:
+- playDate: 조회 날짜 (YYYYMMDD, 기본값: 오늘)
+- theaterId: 지점 ID
+- movieId: 영화 ID
+- areaCode: 지역 코드 (기본값: 11)
+- limit: 최대 결과 수 (기본값: 50)
+
+**예시**:
+- ${baseUrl}/api/megabox/seats?playDate=20260304&theaterId=1372
+- ${baseUrl}/api/megabox/seats?playDate=20260304&movieId=25104500&limit=20
+
+---
+
 ## 응답 형식
 
 ### 성공 응답
@@ -265,6 +321,9 @@ Base URL: ${baseUrl}
 | FETCH_FAILED | 데이터 조회 실패 |
 | OLIVEYOUNG_STORE_SEARCH_FAILED | 올리브영 매장 조회 실패 |
 | OLIVEYOUNG_INVENTORY_CHECK_FAILED | 올리브영 재고 조회 실패 |
+| MEGABOX_THEATER_SEARCH_FAILED | 메가박스 지점 조회 실패 |
+| MEGABOX_MOVIE_LIST_FAILED | 메가박스 영화 목록 조회 실패 |
+| MEGABOX_SEAT_LIST_FAILED | 메가박스 좌석 조회 실패 |
 
 ---
 
@@ -292,6 +351,9 @@ MCP 연결 정보: ${baseUrl}/mcp
 - daiso_get_price_info: 가격 정보 조회
 - oliveyoung_find_nearby_stores: 올리브영 주변 매장 탐색
 - oliveyoung_check_inventory: 올리브영 재고 파악
+- megabox_find_nearby_theaters: 메가박스 주변 지점 탐색
+- megabox_list_now_showing: 메가박스 영화 목록 조회
+- megabox_get_remaining_seats: 메가박스 잔여 좌석 조회
 `;
 }
 

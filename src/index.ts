@@ -13,6 +13,7 @@ import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/
 import { ServiceRegistry } from './core/registry.js';
 import { createDaisoService } from './services/daiso/index.js';
 import { createOliveyoungService } from './services/oliveyoung/index.js';
+import { createMegaboxService } from './services/megabox/index.js';
 import { withEdgeCache } from './utils/cache.js';
 import { createPromptResponse } from './pages/prompt.js';
 import { createOpenApiJsonResponse, createOpenApiYamlResponse } from './pages/openapi.js';
@@ -25,6 +26,11 @@ import {
   handleOliveyoungFindStores,
   handleOliveyoungCheckInventory,
 } from './api/handlers.js';
+import {
+  handleMegaboxFindNearbyTheaters,
+  handleMegaboxListNowShowing,
+  handleMegaboxGetRemainingSeats,
+} from './api/megaboxHandlers.js';
 
 // 서버 메타데이터
 const SERVER_NAME = 'multi-service-mcp';
@@ -42,6 +48,7 @@ const createRegistry = (bindings?: AppBindings) => {
 
   registry.registerAll([
     createDaisoService,
+    createMegaboxService,
     () =>
       createOliveyoungService({
         zyteApiKey: bindings?.ZYTE_API_KEY,
@@ -200,6 +207,39 @@ app.get('/api/oliveyoung/inventory', async (c) =>
       keyPrefix: 'oliveyoung-inventory-v1',
     },
     () => handleOliveyoungCheckInventory(c)
+  )
+);
+app.get('/api/megabox/theaters', async (c) =>
+  withEdgeCache(
+    c.req.url,
+    {
+      ttlSeconds: 60 * 60 * 24,
+      staleWhileRevalidateSeconds: 60 * 5,
+      keyPrefix: 'megabox-theaters-v1',
+    },
+    () => handleMegaboxFindNearbyTheaters(c)
+  )
+);
+app.get('/api/megabox/movies', async (c) =>
+  withEdgeCache(
+    c.req.url,
+    {
+      ttlSeconds: 60 * 10,
+      staleWhileRevalidateSeconds: 60,
+      keyPrefix: 'megabox-movies-v1',
+    },
+    () => handleMegaboxListNowShowing(c)
+  )
+);
+app.get('/api/megabox/seats', async (c) =>
+  withEdgeCache(
+    c.req.url,
+    {
+      ttlSeconds: 60 * 3,
+      staleWhileRevalidateSeconds: 30,
+      keyPrefix: 'megabox-seats-v1',
+    },
+    () => handleMegaboxGetRemainingSeats(c)
   )
 );
 

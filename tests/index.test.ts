@@ -48,6 +48,15 @@ describe('GET /', () => {
     expect(oliveyoungService.name).toBe('올리브영');
   });
 
+  it('메가박스 서비스가 등록되어 있다', async () => {
+    const res = await app.request('/');
+    const data = await res.json();
+
+    const megaboxService = data.services.find((s: { id: string }) => s.id === 'megabox');
+    expect(megaboxService).toBeDefined();
+    expect(megaboxService.name).toBe('메가박스');
+  });
+
   it('다이소 도구들이 포함되어 있다', async () => {
     const res = await app.request('/');
     const data = await res.json();
@@ -64,6 +73,15 @@ describe('GET /', () => {
 
     expect(data.tools).toContain('oliveyoung_find_nearby_stores');
     expect(data.tools).toContain('oliveyoung_check_inventory');
+  });
+
+  it('메가박스 도구들이 포함되어 있다', async () => {
+    const res = await app.request('/');
+    const data = await res.json();
+
+    expect(data.tools).toContain('megabox_find_nearby_theaters');
+    expect(data.tools).toContain('megabox_list_now_showing');
+    expect(data.tools).toContain('megabox_get_remaining_seats');
   });
 
   it('엔드포인트 정보를 포함한다', async () => {
@@ -96,6 +114,35 @@ describe('GET /prompt', () => {
 
     const text = await res.text();
     expect(text).toContain('다이소 MCP API');
+  });
+});
+
+describe('문서 페이지', () => {
+  it('GET /openapi.json 응답을 반환한다', async () => {
+    const res = await app.request('/openapi.json');
+    expect(res.status).toBe(200);
+    expect(res.headers.get('Content-Type')).toContain('application/json');
+
+    const data = await res.json();
+    expect(data.openapi).toBe('3.1.0');
+  });
+
+  it('GET /openapi.yaml 응답을 반환한다', async () => {
+    const res = await app.request('/openapi.yaml');
+    expect(res.status).toBe(200);
+    expect(res.headers.get('Content-Type')).toContain('text/yaml');
+
+    const text = await res.text();
+    expect(text).toContain('openapi: 3.1.0');
+  });
+
+  it('GET /privacy 응답을 반환한다', async () => {
+    const res = await app.request('/privacy');
+    expect(res.status).toBe(200);
+    expect(res.headers.get('Content-Type')).toContain('text/html');
+
+    const text = await res.text();
+    expect(text).toContain('개인정보 처리방침');
   });
 });
 
@@ -275,6 +322,90 @@ describe('API 엔드포인트', () => {
       const data = await res.json();
       expect(data.success).toBe(false);
       expect(data.error.code).toBe('MISSING_QUERY');
+    });
+  });
+
+  describe('GET /api/megabox/theaters', () => {
+    it('메가박스 주변 지점을 반환한다', async () => {
+      mockFetch
+        .mockResolvedValueOnce(
+          new Response(JSON.stringify({ areaBrchList: [{ brchNo: '1372', brchNm: '강남' }] }))
+        )
+        .mockResolvedValueOnce(
+          new Response('<dt>도로명주소</dt><dd>서울 강남구 강남대로</dd><a href="?lng=127.0&lat=37.5">지도</a>')
+        );
+
+      const res = await app.request('/api/megabox/theaters?lat=37.5&lng=127.0');
+      expect(res.status).toBe(200);
+
+      const data = await res.json();
+      expect(data.success).toBe(true);
+      expect(Array.isArray(data.data.theaters)).toBe(true);
+    });
+  });
+
+  describe('GET /api/megabox/movies', () => {
+    it('메가박스 영화/회차 목록을 반환한다', async () => {
+      mockFetch.mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            areaBrchList: [{ brchNo: '1372', brchNm: '강남' }],
+            movieList: [{ movieNo: '25104500', movieNm: '영화A' }],
+            movieFormList: [
+              {
+                playSchdlNo: 'S1',
+                movieNo: '25104500',
+                movieNm: '영화A',
+                brchNo: '1372',
+                brchNm: '강남',
+                playStartTime: '0930',
+                playEndTime: '1120',
+                restSeatCnt: 10,
+                totSeatCnt: 100,
+              },
+            ],
+          })
+        )
+      );
+
+      const res = await app.request('/api/megabox/movies?playDate=20260304');
+      expect(res.status).toBe(200);
+
+      const data = await res.json();
+      expect(data.success).toBe(true);
+      expect(data.data.movies).toHaveLength(1);
+      expect(data.data.showtimes).toHaveLength(1);
+    });
+  });
+
+  describe('GET /api/megabox/seats', () => {
+    it('메가박스 잔여 좌석 목록을 반환한다', async () => {
+      mockFetch.mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            movieFormList: [
+              {
+                playSchdlNo: 'S1',
+                movieNo: 'M1',
+                movieNm: '영화A',
+                brchNo: '1372',
+                brchNm: '강남',
+                playStartTime: '0930',
+                playEndTime: '1120',
+                restSeatCnt: 12,
+                totSeatCnt: 100,
+              },
+            ],
+          })
+        )
+      );
+
+      const res = await app.request('/api/megabox/seats?playDate=20260304');
+      expect(res.status).toBe(200);
+
+      const data = await res.json();
+      expect(data.success).toBe(true);
+      expect(data.data.seats).toHaveLength(1);
     });
   });
 });
