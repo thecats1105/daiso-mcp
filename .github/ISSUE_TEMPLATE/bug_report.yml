@@ -1,0 +1,53 @@
+name: Bug report
+description: 버그 제보 템플릿
+title: '[bug] '
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        재현 가능한 정보 위주로 작성해주세요.
+  - type: textarea
+    id: summary
+    attributes:
+      label: 요약
+      description: 어떤 문제가 발생했는지 간단히 작성해주세요.
+      placeholder: 예) 다이소 재고 조회 시 500 에러가 발생합니다.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 재현 절차
+      description: 문제를 재현하는 단계를 순서대로 작성해주세요.
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 기대 동작
+      placeholder: 예) 재고 목록이 정상적으로 반환되어야 합니다.
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: 실제 동작
+      placeholder: 예) 500 응답과 함께 에러 메시지가 출력됩니다.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: 환경 정보
+      description: Node 버전, 실행 명령, 브랜치 등을 작성해주세요.
+      placeholder: |
+        - Node: v20.x
+        - Command: npm run dev
+        - Branch: main
+    validations:
+      required: false

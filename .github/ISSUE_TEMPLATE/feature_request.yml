@@ -1,0 +1,28 @@
+name: Feature request
+description: 기능 제안 템플릿
+title: '[feature] '
+labels: ['enhancement']
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: 배경/문제
+      description: 어떤 문제를 해결하고 싶은지 작성해주세요.
+      placeholder: 예) 현재는 매장 검색 결과 정렬 기준이 제한적입니다.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 제안 내용
+      description: 원하는 동작이나 API 형태를 구체적으로 작성해주세요.
+      placeholder: 예) 거리순/이름순 정렬 옵션을 추가합니다.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 대안/검토 사항
+      description: 고려한 대안이나 트레이드오프가 있다면 작성해주세요.
+    validations:
+      required: false

@@ -9,10 +9,16 @@
     "deploy": "wrangler deploy",
     "build": "tsc && node scripts/generate-openapi.mjs",
     "build:openapi": "node scripts/generate-openapi.mjs",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint \"src/**/*.ts\" \"tests/**/*.ts\" \"scripts/**/*.mjs\" \"vitest.config.ts\"",
+    "lint:fix": "eslint \"src/**/*.ts\" \"tests/**/*.ts\" \"scripts/**/*.mjs\" \"vitest.config.ts\" --fix",
+    "format": "prettier \".github/**/*.{md,yml,yaml}\" \"*.{md,json,yml,yaml,mjs}\" --write",
+    "format:check": "prettier \".github/**/*.{md,yml,yaml}\" \"*.{md,json,yml,yaml,mjs}\" --check",
     "cf-typegen": "wrangler types",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm test"
   },
   "keywords": [
     "mcp",
@@ -30,12 +36,21 @@
   "bugs": {
     "url": "https://github.com/hmmhmmhm/daiso-mcp/issues"
   },
+  "engines": {
+    "node": ">=20 <21"
+  },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250110.0",
+    "@eslint/js": "^10.0.1",
     "@types/node": "^25.3.3",
     "@vitest/coverage-v8": "^4.0.18",
+    "eslint": "^10.0.2",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.4.0",
     "playwright": "^1.58.2",
+    "prettier": "^3.8.1",
     "typescript": "^5.7.2",
+    "typescript-eslint": "^8.56.1",
     "vitest": "^4.0.18",
     "wrangler": "^4.69.0"
   },

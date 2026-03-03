@@ -23,6 +23,7 @@
 - **최대 줄 수**: 450줄
 - **권장 줄 수**: 300-400줄
 - **초과 시 조치**: 파일이 450줄을 초과하면 기능별로 분리하여 모듈화
+- **예외**: 자동 생성 파일(예: OpenAPI 생성 산출물)은 예외로 둘 수 있음
 
 #### 파일 분리 예시
 
@@ -169,9 +170,9 @@ feat: 제품 카테고리별 필터링 기능 추가
 
 ```typescript
 // ❌ 절대 금지
-const API_KEY = "sk-1234567890abcdef";
-const PASSWORD = "mypassword123";
-const DATABASE_URL = "postgresql://user:pass@localhost/db";
+const API_KEY = 'sk-1234567890abcdef';
+const PASSWORD = 'mypassword123';
+const DATABASE_URL = 'postgresql://user:pass@localhost/db';
 ```
 
 ```typescript
@@ -300,11 +301,13 @@ daiso-mcp/
 새로운 서비스를 추가할 때 네트워크 분석 결과를 이 폴더에 `{서비스명}-` 접두사를 붙여 저장하세요.
 
 ```
+
 docs/
-├── daiso-network-analysis-result.md    # 다이소 API 분석 결과
+├── daiso-network-analysis-result.md # 다이소 API 분석 결과
 ├── daiso-playwright-network-analysis.md # Playwright 네트워크 분석
-├── daiso-replay-session-test.html      # 세션 테스트 HTML
-└── daiso-test-replay.js                # 테스트 리플레이 스크립트
+├── daiso-replay-session-test.html # 세션 테스트 HTML
+└── daiso-test-replay.js # 테스트 리플레이 스크립트
+
 ```
 
 ### 문서 기록
@@ -313,11 +316,13 @@ docs/
 새로운 서비스를 추가할 때 관련 문서를 이 폴더에 `{서비스명}-` 접두사로 저장하세요.
 
 ```
+
 docs/
-├── daiso-network-analysis-result.md    # 다이소 API 분석 결과
+├── daiso-network-analysis-result.md # 다이소 API 분석 결과
 ├── daiso-playwright-network-analysis.md # Playwright 네트워크 분석
-├── daiso-replay-session-test.html      # 세션 테스트 HTML
-└── daiso-test-replay.js                # 테스트 리플레이 스크립트
+├── daiso-replay-session-test.html # 세션 테스트 HTML
+└── daiso-test-replay.js # 테스트 리플레이 스크립트
+
 ```
 
 ### 새 서비스 추가 방법
@@ -327,14 +332,16 @@ docs/
 #### 1. 서비스 디렉토리 생성
 
 ```
+
 src/services/cu/
-├── index.ts      # CuService 클래스 및 팩토리
-├── types.ts      # CU 전용 타입 정의
-├── api.ts        # CU API 엔드포인트
-└── tools/        # CU 도구 구현
-    ├── searchProducts.ts
-    └── findStores.ts
-```
+├── index.ts # CuService 클래스 및 팩토리
+├── types.ts # CU 전용 타입 정의
+├── api.ts # CU API 엔드포인트
+└── tools/ # CU 도구 구현
+├── searchProducts.ts
+└── findStores.ts
+
+````
 
 #### 2. ServiceProvider 구현
 
@@ -361,7 +368,7 @@ class CuService implements ServiceProvider {
 export function createCuService(): ServiceProvider {
   return new CuService();
 }
-```
+````
 
 #### 3. 레지스트리에 등록
 
@@ -377,11 +384,11 @@ registry.registerAll([createDaisoService, createCuService]);
 
 서비스별 도구는 접두사로 구분합니다:
 
-| 서비스 | 접두사 | 예시 |
-|:-------|:-------|:-----|
+| 서비스 | 접두사   | 예시                    |
+| :----- | :------- | :---------------------- |
 | 다이소 | `daiso_` | `daiso_search_products` |
-| CU | `cu_` | `cu_search_products` |
-| CGV | `cgv_` | `cgv_search_movies` |
+| CU     | `cu_`    | `cu_search_products`    |
+| CGV    | `cgv_`   | `cgv_search_movies`     |
 
 ### 파일 명명 규칙
 
@@ -441,7 +448,7 @@ const API_BASE_URL = 'https://api.example.com';
 async function searchProducts(
   query: string,
   category?: string,
-  maxPrice?: number
+  maxPrice?: number,
 ): Promise<SearchResult> {
   // 구현
 }
@@ -459,9 +466,7 @@ if (!query || query.trim().length === 0) {
 const results = await fetchFromAPI(query);
 
 // FIXME: 대소문자 구분 없이 검색하도록 수정 필요
-const filtered = results.filter(item =>
-  item.name.includes(query)
-);
+const filtered = results.filter((item) => item.name.includes(query));
 ```
 
 ### TypeScript 타입 정의
@@ -505,8 +510,8 @@ const user = {
 };
 
 // ❌ 나쁜 예
-const message="안녕하세요"
-const user={name:"홍길동",age:30}
+const message = '안녕하세요';
+const user = { name: '홍길동', age: 30 };
 ```
 
 ---
@@ -527,7 +532,7 @@ const user={name:"홍길동",age:30}
 
 각 도구의 입력/출력 스키마를 명확히 문서화:
 
-```typescript
+````typescript
 /**
  * 제품 검색 API
  *
@@ -553,7 +558,7 @@ const user={name:"홍길동",age:30}
  * }
  * ```
  */
-```
+````
 
 ### CHANGELOG.md (권장)
 
@@ -565,13 +570,16 @@ const user={name:"홍길동",age:30}
 ## [1.1.0] - 2025-03-01
 
 ### Added
+
 - 제품 카테고리별 필터링 기능 추가
 - 가격 히스토리 조회 기능 추가
 
 ### Fixed
+
 - 매장 찾기 시 거리 계산 오류 수정
 
 ### Changed
+
 - API 응답 형식 개선
 ```
 
@@ -611,9 +619,7 @@ describe('제품 검색', () => {
   });
 
   test('빈 검색어는 에러를 발생시킨다', async () => {
-    await expect(
-      searchProducts({ query: '' })
-    ).rejects.toThrow();
+    await expect(searchProducts({ query: '' })).rejects.toThrow();
   });
 });
 ```
