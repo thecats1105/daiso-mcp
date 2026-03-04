@@ -3,8 +3,13 @@
  */
 
 export const CGV_API = {
-  BASE_URL: 'https://m.cgv.co.kr',
-  THEATER_LIST_PATH: '/WebAPP/ReservationV5/Reservation.aspx/GetTheaterList',
-  MOVIE_LIST_PATH: '/WebAPP/ReservationV5/Reservation.aspx/GetMovieList',
-  TIMETABLE_PATH: '/WebAPP/ReservationV5/Reservation.aspx/GetTimeTableList',
+  BASE_URL: 'https://api.cgv.co.kr',
+  OIDC_BASE_URL: 'https://oidc.cgv.co.kr',
+  ZYTE_API_URL: 'https://api.zyte.com/v1/extract',
+  COMPANY_CODE: 'A420',
+  SIGNING_SECRET: 'ydqXY0ocnFLmJGHr_zNzFcpjwAsXq_8JcBNURAkRscg',
+  THEATER_LIST_PATH: '/cnm/atkt/searchRegnList',
+  MOVIE_LIST_PATH: '/cnm/atkt/searchOnlyCgvMovList',
+  TIMETABLE_PATH: '/cnm/atkt/searchSchByMov',
+  TIMETABLE_SCOPE_CODE: '01',
 } as const;

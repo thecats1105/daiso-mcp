@@ -1,66 +1,101 @@
-# CGV 네트워크 분석 결과 (1차 구현용)
+# CGV 네트워크 분석 결과 (실측 업데이트)
 
 작성일: 2026-03-04 (KST)
-대상: `https://m.cgv.co.kr`
+대상:
+- `https://www.cgv.co.kr`
+- `https://api.cgv.co.kr`
+- `https://oidc.cgv.co.kr`
 
-## 목적
+## 결론 요약
 
-플러그인 아키텍처에 CGV 서비스를 1차 추가하기 위한 최소 엔드포인트를 정리합니다.
+- Playwright(로컬 브라우저) 직접 접속: `실패`
+  - 차단 페이지 노출(Cloudflare / 비정상 접속 안내)
+- 비브라우저 직접 호출(서버 IP): `실패`
+  - `https://api.cgv.co.kr`에서 403 차단
+- Zyte 프록시 + 신 API + 서명 헤더: `성공`
+  - 극장/영화/시간표 모두 실데이터 수신 확인
 
-## 1차 구현 기준 엔드포인트
+## 스크래핑 플레이북 기준 판정
 
-- `POST /WebAPP/ReservationV5/Reservation.aspx/GetTheaterList`
-  - 사용 목적: 상영 가능 극장 목록 조회
-  - 입력 필드(예시): `PlayYMD`, `AreaCd`
+1. Playwright MCP로 브라우저 동작 재현
+- 결과: 차단 재현(실패)
 
-- `POST /WebAPP/ReservationV5/Reservation.aspx/GetMovieList`
-  - 사용 목적: 날짜/극장 기준 영화 목록 조회
-  - 입력 필드(예시): `PlayYMD`, `TheaterCd`
+2. 브라우저 요청 체인 분석
+- 기존 `m.cgv.co.kr/WebAPP/ReservationV5/*` 경로는 현재 실효성 없음
+- 신 프론트 번들에서 `api.cgv.co.kr` 티켓 API 확인
 
-- `POST /WebAPP/ReservationV5/Reservation.aspx/GetTimeTableList`
-  - 사용 목적: 날짜/극장/영화 기준 상영 시간표 조회
-  - 입력 필드(예시): `PlayYMD`, `TheaterCd`, `MovieCd`
+3. 비브라우저 재현 시도
+- 직접 호출은 403
+- Zyte 프록시 경유 시 성공
 
-## 응답 정규화 규칙
+## 현재 유효 엔드포인트 (티켓)
+
+- `GET /cnm/atkt/searchRegnList`
+  - 목적: 지역/극장 목록
+  - 필수 쿼리: `coCd=A420`
+
+- `GET /cnm/atkt/searchOnlyCgvMovList`
+  - 목적: 특정 극장/날짜 영화 목록
+  - 필수 쿼리: `coCd`, `siteNo`, `scnYmd(YYYYMMDD)`
+
+- `GET /cnm/atkt/searchSchByMov`
+  - 목적: 특정 극장/날짜/영화 시간표
+  - 필수 쿼리: `coCd`, `siteNo`, `scnYmd`, `movNo`, `rtctlScopCd`
+  - `rtctlScopCd` 누락 시 에러: `발매통제범위코드는 필수 요청 파라미터`
+  - 실측 성공값: `rtctlScopCd=01`
+
+## 필수 요청 헤더
+
+- `Accept: application/json`
+- `Accept-Language: ko-KR`
+- `X-TIMESTAMP: <epoch-seconds>`
+- `X-SIGNATURE: <base64-hmac-sha256>`
+
+서명 규칙:
+- 메시지: `{timestamp}|{pathname}|{bodyText}`
+- 알고리즘: `HMAC-SHA256`
+- 키: 프론트 번들에 하드코딩된 secret 사용
+
+## 실데이터 확인 샘플 (2026-03-04)
+
+- 극장 목록:
+  - `siteNo=0056`, `siteNm=강남` 포함
+- 영화 목록(강남/20260304):
+  - `movNo=30000985`, `movNm=엔하이픈 [워크 더 라인 썸머 에디션] 인 시네마`
+- 시간표(강남/20260304/30000985/rtctlScopCd=01):
+  - 회차 2건 수신
+  - 예: `scnsrtTm=1230`, `scnendTm=1443`, `frSeatCnt=118`
+
+## 정규화 매핑
 
 ### 극장 목록
 
-- 입력 필드: `TheaterCd`, `TheaterName`, `AreaCd`
-- 정규화: `theaterCode`, `theaterName`, `regionCode`
+- 입력: `siteNo`, `siteNm`, `regnGrpCd`
+- 출력: `theaterCode`, `theaterName`, `regionCode`
 
 ### 영화 목록
 
-- 입력 필드: `MovieCd`, `MovieName`, `Grade`
-- 정규화: `movieCode`, `movieName`, `rating`
+- 입력: `movNo`, `movNm`, `cratgClsNm`
+- 출력: `movieCode`, `movieName`, `rating`
 
 ### 시간표
 
-- 입력 필드:
-  - `ScheduleNo`, `MovieCd`, `MovieName`
-  - `TheaterCd`, `TheaterName`
-  - `PlayYmd`, `StartTime`, `EndTime`
-  - `TotalSeat`, `RemainSeat`
-- 정규화:
-  - `scheduleId`, `movieCode`, `movieName`
-  - `theaterCode`, `theaterName`
-  - `playDate`, `startTime`, `endTime`
-  - `totalSeats`, `remainingSeats`
+- 입력: `scnYmd`, `scnSseq`, `siteNo`, `siteNm`, `movNo`, `movNm`, `scnsrtTm`, `scnendTm`, `stcnt`, `frSeatCnt`
+- 출력: `scheduleId`, `playDate`, `theaterCode`, `theaterName`, `movieCode`, `movieName`, `startTime`, `endTime`, `totalSeats`, `remainingSeats`
 
-## 도구 매핑
+## 구현 전략 (우선순위)
 
-- `cgv_find_theaters`: 극장 목록 조회
-- `cgv_search_movies`: 영화 목록 조회
-- `cgv_get_timetable`: 시간표/잔여좌석 조회
+1. 브라우저 기반 성공 경로 확보
+- Playwright는 차단되므로 Zyte 프록시를 브라우저 대체 경로로 사용
 
-## 1차 구현 범위
+2. 비브라우저 직접 호출 우선
+- 직접 호출 시도 후 403이면 fallback
 
-- MCP 도구 3종 등록
-- GET API 3종 제공 (`/api/cgv/theaters`, `/api/cgv/movies`, `/api/cgv/timetable`)
-- OpenAPI/프롬프트 문서 반영
-- 단위 테스트 및 통합 테스트 추가
+3. 불가피 시 Zyte 프록시 fallback
+- 동일 헤더/서명 규칙으로 `api.cgv.co.kr` 호출
 
-## 후속 개선 항목
+## 후속 TODO
 
-- 지역 코드 매핑 테이블 고도화
-- 상영 포맷(2D/IMAX/4DX) 상세 필드 정규화
-- 실좌석 선택 단계 API 분석 및 좌석맵 제공
+- OIDC(`oidc.cgv.co.kr`) 기반 토큰 흐름이 필요한 API 범위 추가 분석
+- `rtctlScopCd` 값 체계 및 의미 문서화
+- 요일/상영관 유형 필터링 파라미터 정리

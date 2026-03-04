@@ -38,6 +38,7 @@ export default defineConfig({
         'src/core/types.ts', // 타입만 정의
         'src/core/interfaces.ts', // 인터페이스만 정의
         'src/services/**/types.ts', // 타입만 정의
+        'src/pages/openapi.ts', // 엔트리 재노출 파일
       ],
 
       // 커버리지 임계값 (100% 목표)

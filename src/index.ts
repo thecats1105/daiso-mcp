@@ -37,7 +37,10 @@ const createRegistry = (bindings?: AppBindings) => {
   registry.registerAll([
     createDaisoService,
     createMegaboxService,
-    createCgvService,
+    () =>
+      createCgvService({
+        zyteApiKey: bindings?.ZYTE_API_KEY,
+      }),
     () =>
       createOliveyoungService({
         zyteApiKey: bindings?.ZYTE_API_KEY,

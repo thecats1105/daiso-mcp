@@ -25,38 +25,40 @@ describe('createGetTimetableTool', () => {
   });
 
   it('시간표를 시간순으로 반환한다', async () => {
-    mockFetch.mockResolvedValue(
-      new Response(
-        JSON.stringify({
-          d: {
-            TimeTableList: [
+    mockFetch.mockImplementation(() =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify({
+            statusCode: 0,
+            statusMessage: '조회 되었습니다.',
+            data: [
               {
-                ScheduleNo: 'SCH2',
-                MovieCd: 'M1',
-                MovieName: '영화A',
-                TheaterCd: '0056',
-                TheaterName: 'CGV강남',
-                PlayYmd: '20260304',
-                StartTime: '1200',
-                EndTime: '1400',
-                TotalSeat: 120,
-                RemainSeat: 40,
+                siteNo: '0056',
+                siteNm: 'CGV강남',
+                scnYmd: '20260304',
+                scnSseq: '2',
+                movNo: 'M1',
+                movNm: '영화A',
+                scnsrtTm: '1200',
+                scnendTm: '1400',
+                stcnt: 120,
+                frSeatCnt: 40,
               },
               {
-                ScheduleNo: 'SCH1',
-                MovieCd: 'M1',
-                MovieName: '영화A',
-                TheaterCd: '0056',
-                TheaterName: 'CGV강남',
-                PlayYmd: '20260304',
-                StartTime: '0930',
-                EndTime: '1130',
-                TotalSeat: 120,
-                RemainSeat: 50,
+                siteNo: '0056',
+                siteNm: 'CGV강남',
+                scnYmd: '20260304',
+                scnSseq: '1',
+                movNo: 'M1',
+                movNm: '영화A',
+                scnsrtTm: '0930',
+                scnendTm: '1130',
+                stcnt: 120,
+                frSeatCnt: 50,
               },
             ],
-          },
-        }),
+          }),
+        ),
       ),
     );
 
@@ -65,56 +67,122 @@ describe('createGetTimetableTool', () => {
 
     const parsed = JSON.parse(result.content[0].text);
     expect(parsed.count).toBe(2);
-    expect(parsed.timetable[0].scheduleId).toBe('SCH1');
+    expect(parsed.timetable[0].scheduleId).toBe('2026030400561');
     expect(parsed.filters.theaterCode).toBe('0056');
     expect(parsed.filters.movieCode).toBe('M1');
   });
 
   it('동일 시작 시간은 극장명 오름차순으로 정렬한다', async () => {
-    mockFetch.mockResolvedValue(
-      new Response(
-        JSON.stringify({
-          d: {
-            TimeTableList: [
-              {
-                ScheduleNo: 'SCH2',
-                MovieCd: 'M1',
-                MovieName: '영화A',
-                TheaterCd: '0100',
-                TheaterName: 'CGV홍대',
-                PlayYmd: '20260304',
-                StartTime: '0930',
-                EndTime: '1130',
-                TotalSeat: 120,
-                RemainSeat: 40,
-              },
-              {
-                ScheduleNo: 'SCH1',
-                MovieCd: 'M1',
-                MovieName: '영화A',
-                TheaterCd: '0056',
-                TheaterName: 'CGV강남',
-                PlayYmd: '20260304',
-                StartTime: '0930',
-                EndTime: '1130',
-                TotalSeat: 120,
-                RemainSeat: 50,
-              },
-            ],
-          },
-        }),
-      ),
-    );
+    mockFetch
+      .mockImplementationOnce(() =>
+        Promise.resolve(
+          new Response(
+            JSON.stringify({
+              statusCode: 0,
+              statusMessage: '조회 되었습니다.',
+              data: [
+                {
+                  regnGrpCd: '01',
+                  regnGrpNm: '서울',
+                  siteList: [{ siteNo: '0056', siteNm: '강남' }],
+                },
+              ],
+            }),
+          ),
+        ),
+      )
+      .mockImplementationOnce(() =>
+        Promise.resolve(
+          new Response(
+            JSON.stringify({
+              statusCode: 0,
+              statusMessage: '조회 되었습니다.',
+              data: [{ movNo: 'M1', movNm: '영화A' }],
+            }),
+          ),
+        ),
+      )
+      .mockImplementationOnce(() =>
+        Promise.resolve(
+          new Response(
+            JSON.stringify({
+              statusCode: 0,
+              statusMessage: '조회 되었습니다.',
+              data: [
+                {
+                  siteNo: '0100',
+                  siteNm: 'CGV홍대',
+                  scnYmd: '20260304',
+                  scnSseq: '2',
+                  movNo: 'M1',
+                  movNm: '영화A',
+                  scnsrtTm: '0930',
+                  scnendTm: '1130',
+                  stcnt: 120,
+                  frSeatCnt: 40,
+                },
+                {
+                  siteNo: '0056',
+                  siteNm: 'CGV강남',
+                  scnYmd: '20260304',
+                  scnSseq: '1',
+                  movNo: 'M1',
+                  movNm: '영화A',
+                  scnsrtTm: '0930',
+                  scnendTm: '1130',
+                  stcnt: 120,
+                  frSeatCnt: 50,
+                },
+              ],
+            }),
+          ),
+        ),
+      );
 
     const tool = createGetTimetableTool();
     const result = await tool.handler({ playDate: '20260304' });
 
     const parsed = JSON.parse(result.content[0].text);
-    expect(parsed.timetable[0].scheduleId).toBe('SCH1');
+    expect(parsed.timetable[0].theaterName).toBe('CGV강남');
   });
 
   it('필터가 없으면 null로 반환한다', async () => {
-    mockFetch.mockResolvedValue(new Response(JSON.stringify({ d: { TimeTableList: [] } })));
+    mockFetch
+      .mockImplementationOnce(() =>
+        Promise.resolve(
+          new Response(
+            JSON.stringify({
+              statusCode: 0,
+              statusMessage: '조회 되었습니다.',
+              data: [
+                {
+                  regnGrpCd: '01',
+                  regnGrpNm: '서울',
+                  siteList: [{ siteNo: '0056', siteNm: '강남' }],
+                },
+              ],
+            }),
+          ),
+        ),
+      )
+      .mockImplementationOnce(() =>
+        Promise.resolve(
+          new Response(
+            JSON.stringify({
+              statusCode: 0,
+              statusMessage: '조회 되었습니다.',
+              data: [{ movNo: 'M1', movNm: '영화A' }],
+            }),
+          ),
+        ),
+      )
+      .mockImplementationOnce(() =>
+        Promise.resolve(
+          new Response(
+            JSON.stringify({ statusCode: 0, statusMessage: '조회 되었습니다.', data: [] }),
+          ),
+        ),
+      );
 
     const tool = createGetTimetableTool();
     const result = await tool.handler({ playDate: '20260304' });

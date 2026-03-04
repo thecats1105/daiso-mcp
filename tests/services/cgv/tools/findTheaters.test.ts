@@ -25,16 +25,24 @@ describe('createFindTheatersTool', () => {
   });
 
   it('극장 목록을 제한 개수로 반환한다', async () => {
-    mockFetch.mockResolvedValue(
-      new Response(
-        JSON.stringify({
-          d: {
-            TheaterList: [
-              { TheaterCd: '0056', TheaterName: 'CGV강남', AreaCd: '01' },
-              { TheaterCd: '0041', TheaterName: 'CGV용산아이파크몰', AreaCd: '01' },
+    mockFetch.mockImplementation(() =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify({
+            statusCode: 0,
+            statusMessage: '조회 되었습니다.',
+            data: [
+              {
+                regnGrpCd: '01',
+                regnGrpNm: '서울',
+                siteList: [
+                  { siteNo: '0056', siteNm: '강남' },
+                  { siteNo: '0001', siteNm: '강변' },
+                ],
+              },
             ],
-          },
-        }),
+          }),
+        ),
       ),
     );
 
@@ -48,13 +56,21 @@ describe('createFindTheatersTool', () => {
   });
 
   it('regionCode가 없으면 null로 반환한다', async () => {
-    mockFetch.mockResolvedValue(
-      new Response(
-        JSON.stringify({
-          d: {
-            TheaterList: [{ TheaterCd: '0056', TheaterName: 'CGV강남', AreaCd: '01' }],
-          },
-        }),
+    mockFetch.mockImplementation(() =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify({
+            statusCode: 0,
+            statusMessage: '조회 되었습니다.',
+            data: [
+              {
+                regnGrpCd: '01',
+                regnGrpNm: '서울',
+                siteList: [{ siteNo: '0056', siteNm: '강남' }],
+              },
+            ],
+          }),
+        ),
       ),
     );
 

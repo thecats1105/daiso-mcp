@@ -12,13 +12,14 @@ interface SearchMoviesArgs {
   timeoutMs?: number;
 }
 
-async function searchMovies(args: SearchMoviesArgs): Promise<McpToolResponse> {
+async function searchMovies(args: SearchMoviesArgs, apiKey?: string): Promise<McpToolResponse> {
   const { playDate = toYyyymmdd(), theaterCode, timeoutMs = 15000 } = args;
 
   const movies = await fetchCgvMovies({
     playDate,
     theaterCode,
     timeout: timeoutMs,
+    zyteApiKey: apiKey,
   });
 
   const result = {
@@ -35,7 +36,7 @@ async function searchMovies(args: SearchMoviesArgs): Promise<McpToolResponse> {
   };
 }
 
-export function createSearchMoviesTool(): ToolRegistration {
+export function createSearchMoviesTool(apiKey?: string): ToolRegistration {
   return {
     name: 'cgv_search_movies',
     metadata: {
@@ -47,6 +48,6 @@ export function createSearchMoviesTool(): ToolRegistration {
         timeoutMs: z.number().optional().default(15000).describe('요청 제한 시간(ms, 기본값: 15000)'),
       },
     },
-    handler: searchMovies as (args: unknown) => Promise<McpToolResponse>,
+    handler: ((args) => searchMovies(args as SearchMoviesArgs, apiKey)) as (args: unknown) => Promise<McpToolResponse>,
   };
 }

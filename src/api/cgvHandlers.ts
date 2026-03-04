@@ -20,6 +20,7 @@ export async function handleCgvFindTheaters(c: ApiContext) {
       playDate,
       regionCode,
       timeout: timeoutMs,
+      zyteApiKey: c.env?.ZYTE_API_KEY,
     });
 
     const sliced = theaters.slice(0, limit);
@@ -55,6 +56,7 @@ export async function handleCgvSearchMovies(c: ApiContext) {
       playDate,
       theaterCode,
       timeout: timeoutMs,
+      zyteApiKey: c.env?.ZYTE_API_KEY,
     });
 
     return successResponse(
@@ -91,6 +93,7 @@ export async function handleCgvGetTimetable(c: ApiContext) {
       theaterCode,
       movieCode,
       timeout: timeoutMs,
+      zyteApiKey: c.env?.ZYTE_API_KEY,
     });
 
     const filtered = timetable

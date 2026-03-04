@@ -25,13 +25,15 @@ describe('createSearchMoviesTool', () => {
   });
 
   it('영화 목록을 반환한다', async () => {
-    mockFetch.mockResolvedValue(
-      new Response(
-        JSON.stringify({
-          d: {
-            MovieList: [{ MovieCd: '200001', MovieName: '테스트 영화', Grade: '12' }],
-          },
-        }),
+    mockFetch.mockImplementation(() =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify({
+            statusCode: 0,
+            statusMessage: '조회 되었습니다.',
+            data: [{ movNo: '30000985', movNm: '테스트 영화', cratgClsNm: '전체관람가' }],
+          }),
+        ),
       ),
     );
 
@@ -45,7 +47,31 @@ describe('createSearchMoviesTool', () => {
   });
 
   it('필터가 없으면 null로 반환한다', async () => {
-    mockFetch.mockResolvedValue(new Response(JSON.stringify({ d: { MovieList: [] } })));
+    mockFetch
+      .mockImplementationOnce(() =>
+        Promise.resolve(
+          new Response(
+            JSON.stringify({
+              statusCode: 0,
+              statusMessage: '조회 되었습니다.',
+              data: [
+                {
+                  regnGrpCd: '01',
+                  regnGrpNm: '서울',
+                  siteList: [{ siteNo: '0056', siteNm: '강남' }],
+                },
+              ],
+            }),
+          ),
+        ),
+      )
+      .mockImplementationOnce(() =>
+        Promise.resolve(
+          new Response(
+            JSON.stringify({ statusCode: 0, statusMessage: '조회 되었습니다.', data: [] }),
+          ),
+        ),
+      );
 
     const tool = createSearchMoviesTool();
     const result = await tool.handler({ playDate: '20260304' });

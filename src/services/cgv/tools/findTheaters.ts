@@ -13,13 +13,14 @@ interface FindTheatersArgs {
   timeoutMs?: number;
 }
 
-async function findTheaters(args: FindTheatersArgs): Promise<McpToolResponse> {
+async function findTheaters(args: FindTheatersArgs, apiKey?: string): Promise<McpToolResponse> {
   const { playDate = toYyyymmdd(), regionCode, limit = 30, timeoutMs = 15000 } = args;
 
   const theaters = await fetchCgvTheaters({
     playDate,
     regionCode,
     timeout: timeoutMs,
+    zyteApiKey: apiKey,
   });
 
   const sliced = theaters.slice(0, limit);
@@ -38,7 +39,7 @@ async function findTheaters(args: FindTheatersArgs): Promise<McpToolResponse> {
   };
 }
 
-export function createFindTheatersTool(): ToolRegistration {
+export function createFindTheatersTool(apiKey?: string): ToolRegistration {
   return {
     name: 'cgv_find_theaters',
     metadata: {
@@ -51,6 +52,6 @@ export function createFindTheatersTool(): ToolRegistration {
         timeoutMs: z.number().optional().default(15000).describe('요청 제한 시간(ms, 기본값: 15000)'),
       },
     },
-    handler: findTheaters as (args: unknown) => Promise<McpToolResponse>,
+    handler: ((args) => findTheaters(args as FindTheatersArgs, apiKey)) as (args: unknown) => Promise<McpToolResponse>,
   };
 }

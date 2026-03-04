@@ -14,7 +14,15 @@ describe('GET /api/cgv/theaters', () => {
     mockFetch.mockResolvedValue(
       new Response(
         JSON.stringify({
-          d: { TheaterList: [{ TheaterCd: '0056', TheaterName: 'CGV강남', AreaCd: '01' }] },
+          statusCode: 0,
+          statusMessage: '조회 되었습니다.',
+          data: [
+            {
+              regnGrpCd: '01',
+              regnGrpNm: '서울',
+              siteList: [{ siteNo: '0056', siteNm: '강남' }],
+            },
+          ],
         }),
       ),
     );
@@ -33,7 +41,9 @@ describe('GET /api/cgv/movies', () => {
     mockFetch.mockResolvedValue(
       new Response(
         JSON.stringify({
-          d: { MovieList: [{ MovieCd: '200001', MovieName: '영화A', Grade: '12' }] },
+          statusCode: 0,
+          statusMessage: '조회 되었습니다.',
+          data: [{ movNo: '30000985', movNm: '영화A', cratgClsNm: '12세' }],
         }),
       ),
     );
@@ -49,28 +59,38 @@ describe('GET /api/cgv/movies', () => {
 
 describe('GET /api/cgv/timetable', () => {
   it('CGV 시간표를 반환한다', async () => {
-    mockFetch.mockResolvedValue(
-      new Response(
-        JSON.stringify({
-          d: {
-            TimeTableList: [
+    mockFetch
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            statusCode: 0,
+            statusMessage: '조회 되었습니다.',
+            data: [{ movNo: 'M1', movNm: '영화A' }],
+          }),
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            statusCode: 0,
+            statusMessage: '조회 되었습니다.',
+            data: [
               {
-                ScheduleNo: 'SCH1',
-                MovieCd: 'M1',
-                MovieName: '영화A',
-                TheaterCd: '0056',
-                TheaterName: 'CGV강남',
-                PlayYmd: '20260304',
-                StartTime: '0930',
-                EndTime: '1130',
-                TotalSeat: 100,
-                RemainSeat: 30,
+                siteNo: '0056',
+                siteNm: 'CGV강남',
+                scnYmd: '20260304',
+                scnSseq: '1',
+                movNo: 'M1',
+                movNm: '영화A',
+                scnsrtTm: '0930',
+                scnendTm: '1130',
+                stcnt: 100,
+                frSeatCnt: 30,
               },
             ],
-          },
-        }),
-      ),
-    );
+          }),
+        ),
+      );
 
     const res = await app.request('/api/cgv/timetable?playDate=20260304&theaterCode=0056');
     expect(res.status).toBe(200);

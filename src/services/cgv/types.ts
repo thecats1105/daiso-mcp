@@ -28,44 +28,50 @@ export interface CgvTimetable {
 }
 
 interface CgvTheaterItem {
-  TheaterCd?: string;
-  TheaterName?: string;
-  AreaCd?: string;
+  siteNo?: string;
+  siteNm?: string;
+  coCd?: string;
+  bzplcOperStusNm?: string;
 }
 
 interface CgvMovieItem {
-  MovieCd?: string;
-  MovieName?: string;
-  Grade?: string;
+  movNo?: string;
+  movNm?: string;
+  cratgClsNm?: string | null;
 }
 
 interface CgvTimetableItem {
-  ScheduleNo?: string;
-  MovieCd?: string;
-  MovieName?: string;
-  TheaterCd?: string;
-  TheaterName?: string;
-  PlayYmd?: string;
-  StartTime?: string;
-  EndTime?: string;
-  TotalSeat?: number | string;
-  RemainSeat?: number | string;
+  siteNo?: string;
+  siteNm?: string;
+  scnYmd?: string;
+  scnSseq?: string;
+  movNo?: string;
+  movNm?: string;
+  scnsrtTm?: string;
+  scnendTm?: string;
+  stcnt?: number | string;
+  frSeatCnt?: number | string;
+  frtmpSeatCnt?: number | string;
 }
 
 export interface CgvTheaterListResponse {
-  d?: {
-    TheaterList?: CgvTheaterItem[];
-  };
+  statusCode?: number;
+  statusMessage?: string;
+  data?: Array<{
+    regnGrpCd?: string;
+    regnGrpNm?: string;
+    siteList?: CgvTheaterItem[];
+  }>;
 }
 
 export interface CgvMovieListResponse {
-  d?: {
-    MovieList?: CgvMovieItem[];
-  };
+  statusCode?: number;
+  statusMessage?: string;
+  data?: CgvMovieItem[];
 }
 
 export interface CgvTimetableResponse {
-  d?: {
-    TimeTableList?: CgvTimetableItem[];
-  };
+  statusCode?: number;
+  statusMessage?: string;
+  data?: CgvTimetableItem[];
 }

@@ -16,15 +16,21 @@ const CGV_METADATA: ServiceMetadata = {
 };
 
 class CgvService implements ServiceProvider {
+  constructor(private readonly options: { zyteApiKey?: string } = {}) {}
+
   readonly metadata = CGV_METADATA;
 
   getTools(): ToolRegistration[] {
-    return [createFindTheatersTool(), createSearchMoviesTool(), createGetTimetableTool()];
+    return [
+      createFindTheatersTool(this.options.zyteApiKey),
+      createSearchMoviesTool(this.options.zyteApiKey),
+      createGetTimetableTool(this.options.zyteApiKey),
+    ];
   }
 }
 
-export function createCgvService(): ServiceProvider {
-  return new CgvService();
+export function createCgvService(options: { zyteApiKey?: string } = {}): ServiceProvider {
+  return new CgvService(options);
 }
 
 export * from './types.js';

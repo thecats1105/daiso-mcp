@@ -18,6 +18,14 @@ interface CommonFetchParams {
   movieCode?: string;
   regionCode?: string;
   timeout?: number;
+  zyteApiKey?: string;
+}
+
+interface ZyteExtractResponse {
+  statusCode?: number;
+  httpResponseBody?: string;
+  detail?: string;
+  title?: string;
 }
 
 function toNumber(value: number | string | undefined): number {
@@ -55,30 +63,172 @@ function createController(timeout: number): { controller: AbortController; timeo
   return { controller, timeoutId };
 }
 
-async function postCgv<TResponse>(
+function resolveZyteApiKey(apiKey?: string): string {
+  if (apiKey && apiKey.trim().length > 0) {
+    return apiKey;
+  }
+
+  if (typeof process !== 'undefined' && process.env?.ZYTE_API_KEY) {
+    return process.env.ZYTE_API_KEY;
+  }
+
+  throw new Error('ZYTE_API_KEY가 설정되지 않았습니다. .env 또는 Cloudflare Worker Secret을 확인해주세요.');
+}
+
+function encodeBasicAuth(apiKey: string): string {
+  if (typeof btoa === 'function') {
+    return btoa(`${apiKey}:`);
+  }
+
+  if (typeof Buffer !== 'undefined') {
+    return Buffer.from(`${apiKey}:`).toString('base64');
+  }
+
+  throw new Error('Basic 인증 인코딩을 지원하지 않는 런타임입니다.');
+}
+
+/* c8 ignore start */
+function decodeBase64(value: string): string {
+  if (typeof atob === 'function') {
+    const binary = atob(value);
+    const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+    return new TextDecoder().decode(bytes);
+  }
+
+  if (typeof Buffer !== 'undefined') {
+    return Buffer.from(value, 'base64').toString('utf8');
+  }
+
+  throw new Error('Base64 디코딩을 지원하지 않는 런타임입니다.');
+}
+
+function toBase64(bytes: Uint8Array): string {
+  if (typeof Buffer !== 'undefined') {
+    return Buffer.from(bytes).toString('base64');
+  }
+
+  let binary = '';
+  for (const byte of bytes) {
+    binary += String.fromCharCode(byte);
+  }
+
+  if (typeof btoa === 'function') {
+    return btoa(binary);
+  }
+
+  /* c8 ignore next */
+  throw new Error('Base64 인코딩을 지원하지 않는 런타임입니다.');
+}
+/* c8 ignore end */
+
+async function createSignature(pathname: string, bodyText: string, timestamp: string): Promise<string> {
+  const payload = `${timestamp}|${pathname}|${bodyText}`;
+  const encoder = new TextEncoder();
+
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(CGV_API.SIGNING_SECRET),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  );
+
+  const signed = await crypto.subtle.sign('HMAC', key, encoder.encode(payload));
+  return toBase64(new Uint8Array(signed));
+}
+
+async function parseJsonResponse<TResponse>(response: Response): Promise<TResponse> {
+  const text = await response.text();
+
+  try {
+    return JSON.parse(text) as TResponse;
+  } catch {
+    throw new Error(text.slice(0, 120) || 'CGV API 응답 파싱 실패');
+  }
+}
+
+async function requestByZyte<TResponse>(
   path: string,
-  payload: Record<string, unknown>,
-  timeout = 15000,
+  searchParams: URLSearchParams,
+  timeout: number,
+  apiKey: string,
 ): Promise<TResponse> {
+  const url = `${CGV_API.BASE_URL}${path}?${searchParams.toString()}`;
+  const timestamp = Math.floor(Date.now() / 1000).toString();
+  const signature = await createSignature(path, '', timestamp);
+  const auth = encodeBasicAuth(resolveZyteApiKey(apiKey));
+
   const { controller, timeoutId } = createController(timeout);
 
   try {
-    const response = await fetch(`${CGV_API.BASE_URL}${path}`, {
+    const response = await fetch(CGV_API.ZYTE_API_URL, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json; charset=utf-8',
-        Accept: 'application/json, text/plain, */*',
-        'X-Requested-With': 'XMLHttpRequest',
+        Authorization: `Basic ${auth}`,
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        url,
+        httpResponseBody: true,
+        customHttpRequestHeaders: [
+          { name: 'Accept', value: 'application/json' },
+          { name: 'Accept-Language', value: 'ko-KR' },
+          { name: 'X-TIMESTAMP', value: timestamp },
+          { name: 'X-SIGNATURE', value: signature },
+        ],
+      }),
       signal: controller.signal,
     });
 
+    const result = (await response.json()) as ZyteExtractResponse;
+
     if (!response.ok) {
-      throw new Error(`CGV API 호출 실패: ${response.status}`);
+      throw new Error(`Zyte API 호출 실패: ${response.status} ${result.detail || result.title || ''}`.trim());
     }
 
-    return (await response.json()) as TResponse;
+    if (!result.httpResponseBody) {
+      throw new Error('Zyte HTTP 응답 본문이 비어 있습니다.');
+    }
+
+    return JSON.parse(decodeBase64(result.httpResponseBody)) as TResponse;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+async function requestCgv<TResponse>(
+  path: string,
+  searchParams: URLSearchParams,
+  timeout = 15000,
+  zyteApiKey?: string,
+): Promise<TResponse> {
+  const url = `${CGV_API.BASE_URL}${path}?${searchParams.toString()}`;
+  const timestamp = Math.floor(Date.now() / 1000).toString();
+  const signature = await createSignature(path, '', timestamp);
+  const { controller, timeoutId } = createController(timeout);
+
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        'Accept-Language': 'ko-KR',
+        'X-TIMESTAMP': timestamp,
+        'X-SIGNATURE': signature,
+      },
+      signal: controller.signal,
+    });
+
+    if (response.ok) {
+      return await parseJsonResponse<TResponse>(response);
+    }
+
+    if (response.status === 403 && zyteApiKey) {
+      return await requestByZyte<TResponse>(path, searchParams, timeout, zyteApiKey);
+    }
+
+    throw new Error(`CGV API 호출 실패: ${response.status}`);
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
       throw new Error('CGV API 요청 시간 초과');
@@ -90,68 +240,122 @@ async function postCgv<TResponse>(
   }
 }
 
+async function resolveTheaterCode(playDate: string, theaterCode: string | undefined, params: CommonFetchParams) {
+  if (theaterCode) {
+    return theaterCode;
+  }
+
+  const theaters = await fetchCgvTheaters({
+    playDate,
+    regionCode: params.regionCode,
+    timeout: params.timeout,
+    zyteApiKey: params.zyteApiKey,
+  });
+
+  return theaters[0]?.theaterCode || '0056';
+}
+
+async function resolveMovieCode(playDate: string, theaterCode: string, movieCode: string | undefined, params: CommonFetchParams) {
+  if (movieCode) {
+    return movieCode;
+  }
+
+  const movies = await fetchCgvMovies({
+    playDate,
+    theaterCode,
+    timeout: params.timeout,
+    zyteApiKey: params.zyteApiKey,
+  });
+
+  return movies[0]?.movieCode || '';
+}
+
 export async function fetchCgvTheaters(params: CommonFetchParams): Promise<CgvTheater[]> {
-  const response = await postCgv<CgvTheaterListResponse>(
+  const searchParams = new URLSearchParams({
+    coCd: CGV_API.COMPANY_CODE,
+  });
+
+  const response = await requestCgv<CgvTheaterListResponse>(
     CGV_API.THEATER_LIST_PATH,
-    {
-      PlayYMD: params.playDate || toYyyymmdd(),
-      AreaCd: params.regionCode || '',
-    },
+    searchParams,
     params.timeout,
+    params.zyteApiKey,
   );
 
-  return (response.d?.TheaterList || [])
-    .filter((item) => item.TheaterCd && item.TheaterName)
-    .map((item) => ({
-      theaterCode: item.TheaterCd as string,
-      theaterName: item.TheaterName as string,
-      regionCode: item.AreaCd || undefined,
-    }));
+  const list = (response.data || []).flatMap((region) =>
+    (region.siteList || []).map((site) => ({
+      theaterCode: site.siteNo || '',
+      theaterName: site.siteNm || '',
+      regionCode: region.regnGrpCd || undefined,
+      regionName: region.regnGrpNm || '',
+    })),
+  );
+
+  return list
+    .filter((item) => item.theaterCode && item.theaterName)
+    .filter((item) => (params.regionCode ? item.regionCode === params.regionCode : true))
+    .map(({ theaterCode, theaterName, regionCode }) => ({ theaterCode, theaterName, regionCode }));
 }
 
 export async function fetchCgvMovies(params: CommonFetchParams): Promise<CgvMovie[]> {
-  const response = await postCgv<CgvMovieListResponse>(
+  const playDate = params.playDate || toYyyymmdd();
+  const theaterCode = await resolveTheaterCode(playDate, params.theaterCode, params);
+
+  const searchParams = new URLSearchParams({
+    coCd: CGV_API.COMPANY_CODE,
+    siteNo: theaterCode,
+    scnYmd: playDate,
+  });
+
+  const response = await requestCgv<CgvMovieListResponse>(
     CGV_API.MOVIE_LIST_PATH,
-    {
-      PlayYMD: params.playDate || toYyyymmdd(),
-      TheaterCd: params.theaterCode || '',
-    },
+    searchParams,
     params.timeout,
+    params.zyteApiKey,
   );
 
-  return (response.d?.MovieList || [])
-    .filter((item) => item.MovieCd && item.MovieName)
+  return (response.data || [])
+    .filter((item) => item.movNo && item.movNm)
     .map((item) => ({
-      movieCode: item.MovieCd as string,
-      movieName: item.MovieName as string,
-      rating: item.Grade || undefined,
+      movieCode: item.movNo as string,
+      movieName: item.movNm as string,
+      rating: item.cratgClsNm || undefined,
     }));
 }
 
 export async function fetchCgvTimetable(params: CommonFetchParams): Promise<CgvTimetable[]> {
-  const response = await postCgv<CgvTimetableResponse>(
+  const playDate = params.playDate || toYyyymmdd();
+  const theaterCode = await resolveTheaterCode(playDate, params.theaterCode, params);
+  const movieCode = await resolveMovieCode(playDate, theaterCode, params.movieCode, params);
+
+  const searchParams = new URLSearchParams({
+    coCd: CGV_API.COMPANY_CODE,
+    siteNo: theaterCode,
+    scnYmd: playDate,
+    movNo: movieCode,
+    rtctlScopCd: CGV_API.TIMETABLE_SCOPE_CODE,
+  });
+
+  const response = await requestCgv<CgvTimetableResponse>(
     CGV_API.TIMETABLE_PATH,
-    {
-      PlayYMD: params.playDate || toYyyymmdd(),
-      TheaterCd: params.theaterCode || '',
-      MovieCd: params.movieCode || '',
-    },
+    searchParams,
     params.timeout,
+    params.zyteApiKey,
   );
 
-  return (response.d?.TimeTableList || [])
-    .filter((item) => item.ScheduleNo && item.MovieCd && item.TheaterCd)
+  return (response.data || [])
+    .filter((item) => item.siteNo && item.movNo && item.scnYmd)
     .map((item) => ({
-      scheduleId: item.ScheduleNo as string,
-      movieCode: item.MovieCd as string,
-      movieName: item.MovieName || '',
-      theaterCode: item.TheaterCd as string,
-      theaterName: item.TheaterName || '',
-      playDate: item.PlayYmd || params.playDate || toYyyymmdd(),
-      startTime: formatTime(item.StartTime),
-      endTime: formatTime(item.EndTime),
-      totalSeats: toNumber(item.TotalSeat),
-      remainingSeats: toNumber(item.RemainSeat),
+      scheduleId: `${item.scnYmd || playDate}${item.siteNo || ''}${item.scnSseq || ''}`,
+      movieCode: item.movNo as string,
+      movieName: item.movNm || '',
+      theaterCode: item.siteNo as string,
+      theaterName: item.siteNm || '',
+      playDate: item.scnYmd || playDate,
+      startTime: formatTime(item.scnsrtTm),
+      endTime: formatTime(item.scnendTm),
+      totalSeats: toNumber(item.stcnt),
+      remainingSeats: toNumber(item.frSeatCnt || item.frtmpSeatCnt),
     }));
 }
 

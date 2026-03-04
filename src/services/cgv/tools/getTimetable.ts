@@ -14,7 +14,7 @@ interface GetTimetableArgs {
   timeoutMs?: number;
 }
 
-async function getTimetable(args: GetTimetableArgs): Promise<McpToolResponse> {
+async function getTimetable(args: GetTimetableArgs, apiKey?: string): Promise<McpToolResponse> {
   const {
     playDate = toYyyymmdd(),
     theaterCode,
@@ -28,6 +28,7 @@ async function getTimetable(args: GetTimetableArgs): Promise<McpToolResponse> {
     theaterCode,
     movieCode,
     timeout: timeoutMs,
+    zyteApiKey: apiKey,
   });
 
   const filtered = timetable
@@ -57,7 +58,7 @@ async function getTimetable(args: GetTimetableArgs): Promise<McpToolResponse> {
   };
 }
 
-export function createGetTimetableTool(): ToolRegistration {
+export function createGetTimetableTool(apiKey?: string): ToolRegistration {
   return {
     name: 'cgv_get_timetable',
     metadata: {
@@ -71,6 +72,6 @@ export function createGetTimetableTool(): ToolRegistration {
         timeoutMs: z.number().optional().default(15000).describe('요청 제한 시간(ms, 기본값: 15000)'),
       },
     },
-    handler: getTimetable as (args: unknown) => Promise<McpToolResponse>,
+    handler: ((args) => getTimetable(args as GetTimetableArgs, apiKey)) as (args: unknown) => Promise<McpToolResponse>,
   };
 }
