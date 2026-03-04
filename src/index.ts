@@ -14,31 +14,17 @@ import { ServiceRegistry } from './core/registry.js';
 import { createDaisoService } from './services/daiso/index.js';
 import { createOliveyoungService } from './services/oliveyoung/index.js';
 import { createMegaboxService } from './services/megabox/index.js';
-import { withEdgeCache } from './utils/cache.js';
 import { createPromptResponse } from './pages/prompt.js';
 import { createOpenApiJsonResponse, createOpenApiYamlResponse } from './pages/openapi.js';
 import { createPrivacyResponse } from './pages/privacy.js';
-import {
-  handleSearchProducts,
-  handleGetProduct,
-  handleFindStores,
-  handleCheckInventory,
-  handleOliveyoungFindStores,
-  handleOliveyoungCheckInventory,
-} from './api/handlers.js';
-import {
-  handleMegaboxFindNearbyTheaters,
-  handleMegaboxListNowShowing,
-  handleMegaboxGetRemainingSeats,
-} from './api/megaboxHandlers.js';
+import type { AppBindings } from './api/response.js';
+import { registerDaisoRoutes } from './api/routes/daisoRoutes.js';
+import { registerOliveyoungRoutes } from './api/routes/oliveyoungRoutes.js';
+import { registerMegaboxRoutes } from './api/routes/megaboxRoutes.js';
 
 // 서버 메타데이터
 const SERVER_NAME = 'multi-service-mcp';
 const SERVER_VERSION = '1.0.0';
-
-interface AppBindings {
-  ZYTE_API_KEY?: string;
-}
 
 /**
  * 요청 컨텍스트 기반 서비스 레지스트리 생성
@@ -143,105 +129,9 @@ app.get('/privacy', (c) => {
 });
 
 // GET API 엔드포인트 (MCP 미지원 에이전트용)
-app.get('/api/daiso/products', async (c) =>
-  withEdgeCache(
-    c.req.url,
-    {
-      ttlSeconds: 60 * 30,
-      staleWhileRevalidateSeconds: 60 * 3,
-      keyPrefix: 'daiso-products-v1',
-    },
-    () => handleSearchProducts(c)
-  )
-);
-app.get('/api/daiso/products/:id', async (c) =>
-  withEdgeCache(
-    c.req.url,
-    {
-      ttlSeconds: 60 * 60,
-      staleWhileRevalidateSeconds: 60 * 5,
-      keyPrefix: 'daiso-product-detail-v1',
-    },
-    () => handleGetProduct(c)
-  )
-);
-app.get('/api/daiso/stores', async (c) =>
-  withEdgeCache(
-    c.req.url,
-    {
-      ttlSeconds: 60 * 60 * 24,
-      staleWhileRevalidateSeconds: 60 * 5,
-      keyPrefix: 'daiso-stores-v1',
-    },
-    () => handleFindStores(c)
-  )
-);
-app.get('/api/daiso/inventory', async (c) =>
-  withEdgeCache(
-    c.req.url,
-    {
-      ttlSeconds: 60 * 10,
-      staleWhileRevalidateSeconds: 60,
-      keyPrefix: 'daiso-inventory-v1',
-    },
-    () => handleCheckInventory(c)
-  )
-);
-app.get('/api/oliveyoung/stores', async (c) =>
-  withEdgeCache(
-    c.req.url,
-    {
-      ttlSeconds: 60 * 60 * 24,
-      staleWhileRevalidateSeconds: 60 * 5,
-      keyPrefix: 'oliveyoung-stores-v1',
-    },
-    () => handleOliveyoungFindStores(c)
-  )
-);
-app.get('/api/oliveyoung/inventory', async (c) =>
-  withEdgeCache(
-    c.req.url,
-    {
-      ttlSeconds: 60 * 10,
-      staleWhileRevalidateSeconds: 60,
-      keyPrefix: 'oliveyoung-inventory-v1',
-    },
-    () => handleOliveyoungCheckInventory(c)
-  )
-);
-app.get('/api/megabox/theaters', async (c) =>
-  withEdgeCache(
-    c.req.url,
-    {
-      ttlSeconds: 60 * 60 * 24,
-      staleWhileRevalidateSeconds: 60 * 5,
-      keyPrefix: 'megabox-theaters-v1',
-    },
-    () => handleMegaboxFindNearbyTheaters(c)
-  )
-);
-app.get('/api/megabox/movies', async (c) =>
-  withEdgeCache(
-    c.req.url,
-    {
-      ttlSeconds: 60 * 10,
-      staleWhileRevalidateSeconds: 60,
-      keyPrefix: 'megabox-movies-v1',
-    },
-    () => handleMegaboxListNowShowing(c)
-  )
-);
-app.get('/api/megabox/seats', async (c) =>
-  withEdgeCache(
-    c.req.url,
-    {
-      ttlSeconds: 60 * 3,
-      staleWhileRevalidateSeconds: 30,
-      keyPrefix: 'megabox-seats-v1',
-    },
-    () => handleMegaboxGetRemainingSeats(c)
-  )
-);
+registerDaisoRoutes(app);
+registerOliveyoungRoutes(app);
+registerMegaboxRoutes(app);
 
 // MCP 엔드포인트
 app.all('/mcp', async (c) => {

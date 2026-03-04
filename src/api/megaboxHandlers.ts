@@ -2,50 +2,12 @@
  * 메가박스 GET API 핸들러
  */
 
-import type { Context } from 'hono';
 import {
   fetchMegaboxBookingList,
   fetchMegaboxTheaterInfo,
   toYyyymmdd,
 } from '../services/megabox/client.js';
-
-interface AppBindings {
-  ZYTE_API_KEY?: string;
-}
-
-type ApiContext = Context<{ Bindings: AppBindings }>;
-
-interface ApiResponse<T> {
-  success: boolean;
-  data?: T;
-  error?: {
-    code: string;
-    message: string;
-  };
-  meta?: {
-    total?: number;
-    page?: number;
-    pageSize?: number;
-  };
-}
-
-function successResponse<T>(c: ApiContext, data: T, meta?: ApiResponse<T>['meta']) {
-  return c.json<ApiResponse<T>>({
-    success: true,
-    data,
-    meta,
-  });
-}
-
-function errorResponse(c: ApiContext, code: string, message: string, status: 400 | 404 | 500 = 400) {
-  return c.json<ApiResponse<never>>(
-    {
-      success: false,
-      error: { code, message },
-    },
-    status
-  );
-}
+import { type ApiContext, errorResponse, successResponse } from './response.js';
 
 function calculateDistanceKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const toRad = (deg: number) => (deg * Math.PI) / 180;

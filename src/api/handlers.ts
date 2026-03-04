@@ -5,7 +5,6 @@
  * 기존 도구의 핵심 함수들을 재사용합니다.
  */
 
-import type { Context } from 'hono';
 import { fetchProducts } from '../services/daiso/tools/searchProducts.js';
 import { fetchStores } from '../services/daiso/tools/findStores.js';
 import {
@@ -18,51 +17,7 @@ import {
   fetchOliveyoungProducts,
   fetchOliveyoungStores,
 } from '../services/oliveyoung/client.js';
-
-interface AppBindings {
-  ZYTE_API_KEY?: string;
-}
-
-type ApiContext = Context<{ Bindings: AppBindings }>;
-
-/** API 응답 형식 */
-interface ApiResponse<T> {
-  success: boolean;
-  data?: T;
-  error?: {
-    code: string;
-    message: string;
-  };
-  meta?: {
-    total?: number;
-    page?: number;
-    pageSize?: number;
-  };
-}
-
-/**
- * 성공 응답 생성
- */
-function successResponse<T>(c: ApiContext, data: T, meta?: ApiResponse<T>['meta']) {
-  return c.json<ApiResponse<T>>({
-    success: true,
-    data,
-    meta,
-  });
-}
-
-/**
- * 에러 응답 생성
- */
-function errorResponse(c: ApiContext, code: string, message: string, status: 400 | 404 | 500 = 400) {
-  return c.json<ApiResponse<never>>(
-    {
-      success: false,
-      error: { code, message },
-    },
-    status
-  );
-}
+import { type ApiContext, errorResponse, successResponse } from './response.js';
 
 /**
  * 제품 검색 API 핸들러
