@@ -476,6 +476,56 @@ export async function runCli(argv: string[], deps?: Partial<CliDeps>): Promise<n
     );
   }
 
+  if (command === 'cu-stores') {
+    const parsed = parseCliArgs(options);
+    if (parsed.options.help === 'true') {
+      return printCommandHelp('cu-stores', resolvedDeps.writeOut, resolvedDeps.writeErr);
+    }
+
+    const keyword = parsed.positionals[0];
+    if (keyword) {
+      parsed.options.keyword = keyword;
+    }
+
+    const targetUrl = toUrl('/api/cu/stores');
+    applyOptionsToQuery(targetUrl, toQueryOptions(parsed.options));
+
+    return await requestAndPrintResponse(
+      resolvedDeps.fetchImpl,
+      resolvedDeps.writeOut,
+      resolvedDeps.writeErr,
+      targetUrl,
+      command,
+      parsed.options.json === 'true',
+    );
+  }
+
+  if (command === 'cu-inventory') {
+    const parsed = parseCliArgs(options);
+    if (parsed.options.help === 'true') {
+      return printCommandHelp('cu-inventory', resolvedDeps.writeOut, resolvedDeps.writeErr);
+    }
+
+    const keyword = parsed.positionals[0];
+    if (!keyword) {
+      resolvedDeps.writeErr('cu-inventory 명령은 검색어가 필요합니다. 예: daiso cu-inventory 과자');
+      return 1;
+    }
+
+    const targetUrl = toUrl('/api/cu/inventory');
+    targetUrl.searchParams.set('keyword', keyword);
+    applyOptionsToQuery(targetUrl, toQueryOptions(parsed.options));
+
+    return await requestAndPrintResponse(
+      resolvedDeps.fetchImpl,
+      resolvedDeps.writeOut,
+      resolvedDeps.writeErr,
+      targetUrl,
+      command,
+      parsed.options.json === 'true',
+    );
+  }
+
   resolvedDeps.writeErr(`알 수 없는 명령어: ${command}`);
   resolvedDeps.writeErr('도움말: daiso help');
   return 1;

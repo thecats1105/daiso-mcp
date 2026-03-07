@@ -1,0 +1,154 @@
+/**
+ * CU 클라이언트 테스트
+ */
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { fetchCuStock, fetchCuStores, primeCuStockDisplay } from '../../../src/services/cu/client.js';
+
+const mockFetch = vi.fn();
+
+beforeEach(() => {
+  mockFetch.mockReset();
+  vi.stubGlobal('fetch', mockFetch);
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
+describe('fetchCuStores', () => {
+  it('CU 매장 목록을 정규화해서 반환한다', async () => {
+    mockFetch.mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          totalCnt: 1,
+          storeList: [
+            {
+              storeCd: '28376',
+              storeNm: '중앙하이츠빌점',
+              storeTelNo: '0315088023',
+              addrFst: '경기도 안산시 단원구 안산천서로',
+              addrDetail: '23 중앙하이츠빌 1층',
+              latVal: 37.318482,
+              longVal: 126.841838,
+              distance: 97,
+              stock: '10',
+              deliveryPickYn: 'Y',
+              jumpoPickYn: 'N',
+              reserveYn: 'N',
+            },
+          ],
+        }),
+      ),
+    );
+
+    const result = await fetchCuStores({ latitude: 37.5, longitude: 127.0, searchWord: '강남' });
+
+    expect(result.totalCount).toBe(1);
+    expect(result.stores[0]).toEqual(
+      expect.objectContaining({
+        storeCode: '28376',
+        storeName: '중앙하이츠빌점',
+        stock: 10,
+        deliveryYn: true,
+      }),
+    );
+  });
+
+  it('기본 헤더와 POST 요청을 사용한다', async () => {
+    mockFetch.mockResolvedValue(new Response(JSON.stringify({ totalCnt: 0, storeList: [] })));
+
+    await fetchCuStores({ latitude: 37.5, longitude: 127.0 });
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      'https://www.pocketcu.co.kr/api/store',
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+        }),
+      }),
+    );
+  });
+});
+
+describe('primeCuStockDisplay', () => {
+  it('재고 초기화 API를 호출한다', async () => {
+    mockFetch.mockResolvedValue(new Response(JSON.stringify({ areaList: [] })));
+
+    await primeCuStockDisplay();
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      'https://www.pocketcu.co.kr/api/search/display/stock',
+      expect.objectContaining({ method: 'POST' }),
+    );
+  });
+});
+
+describe('fetchCuStock', () => {
+  it('재고 검색 결과를 정규화해서 반환한다', async () => {
+    mockFetch
+      .mockResolvedValueOnce(new Response(JSON.stringify({ areaList: [] })))
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            spellModifyYn: 'Y',
+            data: {
+              stockResult: {
+                result: {
+                  total_count: 2,
+                  rows: [
+                    {
+                      fields: {
+                        item_cd: '8801',
+                        item_nm: '감자칩',
+                        hyun_maega: '1700',
+                        pickup_yn: 'Y',
+                        deliv_yn: 'N',
+                        reserv_yn: 'N',
+                      },
+                    },
+                    {
+                      fields: {
+                        item_cd: '8802',
+                        item_nm: '초코바',
+                        hyun_maega: 1200,
+                        pickup_yn: 'N',
+                        deliv_yn: 'Y',
+                        reserv_yn: 'Y',
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          }),
+        ),
+      );
+
+    const result = await fetchCuStock({ keyword: '과자', limit: 8, offset: 0, searchSort: 'recom' });
+
+    expect(result.totalCount).toBe(2);
+    expect(result.spellModifyYn).toBe('Y');
+    expect(result.items[0].price).toBe(1700);
+    expect(result.items[1].reserveYn).toBe(true);
+  });
+
+  it('display 호출이 실패해도 메인 검색을 시도한다', async () => {
+    mockFetch
+      .mockRejectedValueOnce(new Error('display fail'))
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            data: { stockResult: { result: { total_count: 0, rows: [] } } },
+          }),
+        ),
+      );
+
+    const result = await fetchCuStock({ keyword: '과자', limit: 8, offset: 0, searchSort: 'recom' });
+
+    expect(result.totalCount).toBe(0);
+    expect(result.items).toEqual([]);
+  });
+});

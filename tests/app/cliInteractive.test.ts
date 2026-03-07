@@ -276,6 +276,56 @@ describe('runInteractiveCli', () => {
     expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
 
+  it('CU 서비스에서 매장/상품 선택 후 재고 정보를 확인한다', async () => {
+    const output: string[] = [];
+    const fetchImpl = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        createJsonResponse({
+          success: true,
+          data: {
+            stores: [{ storeName: 'CU 강남점', address: '서울 강남구', phone: '02-555-6666' }],
+          },
+        }),
+      )
+      .mockResolvedValueOnce(
+        createJsonResponse({
+          success: true,
+          data: {
+            inventory: {
+              items: [
+                {
+                  itemCode: '8801',
+                  itemName: '감자칩',
+                  price: 1700,
+                  pickupYn: true,
+                  deliveryYn: false,
+                  reserveYn: false,
+                },
+              ],
+            },
+          },
+        }),
+      );
+
+    const exitCode = await runInteractiveCli({
+      fetchImpl,
+      writeOut: (message: string) => {
+        output.push(message);
+      },
+      writeErr: () => {},
+      createPrompt: createPrompt(['3', '강남', '1', '과자', '1', '3']),
+    });
+
+    expect(exitCode).toBe(0);
+    expect(output.join('\n')).toContain('- 상품: 감자칩');
+    expect(fetchImpl).toHaveBeenNthCalledWith(1, 'https://mcp.aka.page/api/cu/stores?keyword=%EA%B0%95%EB%82%A8&limit=10');
+    expect(fetchImpl).toHaveBeenNthCalledWith(
+      2,
+      'https://mcp.aka.page/api/cu/inventory?keyword=%EA%B3%BC%EC%9E%90&storeKeyword=CU+%EA%B0%95%EB%82%A8%EC%A0%90&size=10&storeLimit=10',
+    );
+  });
+
   it('요청 중 문자열 오류도 처리한다', async () => {
     const errors: string[] = [];
     const fetchImpl = vi.fn<typeof fetch>().mockRejectedValue('network down');

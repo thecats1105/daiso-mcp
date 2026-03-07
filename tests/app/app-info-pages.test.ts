@@ -42,6 +42,15 @@ describe('GET /', () => {
     expect(oliveyoungService.name).toBe('올리브영');
   });
 
+  it('CU 서비스가 등록되어 있다', async () => {
+    const res = await app.request('/');
+    const data = await res.json();
+
+    const cuService = data.services.find((s: { id: string }) => s.id === 'cu');
+    expect(cuService).toBeDefined();
+    expect(cuService.name).toBe('CU 편의점');
+  });
+
   it('메가박스 서비스가 등록되어 있다', async () => {
     const res = await app.request('/');
     const data = await res.json();
@@ -76,6 +85,14 @@ describe('GET /', () => {
 
     expect(data.tools).toContain('oliveyoung_find_nearby_stores');
     expect(data.tools).toContain('oliveyoung_check_inventory');
+  });
+
+  it('CU 도구들이 포함되어 있다', async () => {
+    const res = await app.request('/');
+    const data = await res.json();
+
+    expect(data.tools).toContain('cu_find_nearby_stores');
+    expect(data.tools).toContain('cu_check_inventory');
   });
 
   it('메가박스 도구들이 포함되어 있다', async () => {

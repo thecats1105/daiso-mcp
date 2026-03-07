@@ -119,6 +119,23 @@ describe('cliInteractiveTestables', () => {
     expect(fetchImpl).toHaveBeenCalledWith('https://mcp.aka.page/api/daiso/stores?keyword=+++&limit=10');
   });
 
+  it('CU 매장 검색은 fallback 없이 원본 검색어로 조회한다', async () => {
+    const fetchImpl = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        createJsonResponse({
+          success: true,
+          data: { stores: [{ storeName: 'CU 강남점', address: '서울', phone: '02' }] },
+        }),
+      );
+
+    const result = await cliInteractiveTestables.fetchStoresWithKeywordFallback(fetchImpl, 'cu', '강남');
+
+    expect(result.matchedKeyword).toBe('강남');
+    expect(result.stores).toHaveLength(1);
+    expect(fetchImpl).toHaveBeenCalledWith('https://mcp.aka.page/api/cu/stores?keyword=%EA%B0%95%EB%82%A8&limit=10');
+  });
+
   it('fetchEnvelope는 HTTP 오류를 처리한다', async () => {
     const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(createJsonResponse({}, false, 500));
     await expect(cliInteractiveTestables.fetchEnvelope(fetchImpl, '/api/daiso/stores')).rejects.toThrow('HTTP 500');
@@ -338,5 +355,65 @@ describe('cliInteractiveTestables', () => {
       store,
     );
     expect(out.join('\n')).toContain('남은수량: 3');
+  });
+
+  it('runCuItemSearch의 예외/성공 분기를 처리한다', async () => {
+    const out: string[] = [];
+    const depsBase = {
+      writeOut: (m: string) => out.push(m),
+      writeErr: () => {},
+    };
+    const store = { name: 'CU 강남점', address: '서울', phone: '02' };
+
+    await cliInteractiveTestables.runCuItemSearch(
+      {
+        ...depsBase,
+        fetchImpl: vi.fn<typeof fetch>().mockResolvedValueOnce(createJsonResponse({ success: false })),
+      },
+      createPrompt(['과자']),
+      store,
+    );
+    expect(out.join('\n')).toContain('재고 응답을 해석하지 못했습니다.');
+
+    await cliInteractiveTestables.runCuItemSearch(
+      {
+        ...depsBase,
+        fetchImpl: vi.fn<typeof fetch>().mockResolvedValueOnce(createJsonResponse({ success: true, data: {} })),
+      },
+      createPrompt(['과자']),
+      store,
+    );
+    expect(out.join('\n')).toContain('CU 상품 데이터가 없습니다.');
+
+    await cliInteractiveTestables.runCuItemSearch(
+      {
+        ...depsBase,
+        fetchImpl: vi
+          .fn<typeof fetch>()
+          .mockResolvedValueOnce(
+            createJsonResponse({
+              success: true,
+              data: {
+                inventory: {
+                  items: [
+                    {
+                      itemCode: '8801',
+                      itemName: '감자칩',
+                      price: 1700,
+                      pickupYn: true,
+                      deliveryYn: false,
+                      reserveYn: false,
+                    },
+                  ],
+                },
+              },
+            }),
+          ),
+      },
+      createPrompt(['과자', '1']),
+      store,
+    );
+    expect(out.join('\n')).toContain('픽업 가능: 예');
+    expect(out.join('\n')).toContain('배달 가능: 아니오');
   });
 });

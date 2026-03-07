@@ -12,7 +12,9 @@ export type CommandName =
   | 'products'
   | 'product'
   | 'stores'
-  | 'inventory';
+  | 'inventory'
+  | 'cu-stores'
+  | 'cu-inventory';
 
 export const COMMAND_LIST: CommandName[] = [
   'help',
@@ -25,6 +27,8 @@ export const COMMAND_LIST: CommandName[] = [
   'product',
   'stores',
   'inventory',
+  'cu-stores',
+  'cu-inventory',
 ];
 
 const COMMAND_SUMMARY: Record<CommandName, string> = {
@@ -38,6 +42,8 @@ const COMMAND_SUMMARY: Record<CommandName, string> = {
   product: '다이소 제품 상세 조회',
   stores: '다이소 매장 검색',
   inventory: '다이소 재고 조회',
+  'cu-stores': 'CU 매장 검색',
+  'cu-inventory': 'CU 재고 조회',
 };
 
 const COMMAND_DETAIL: Record<CommandName, string[]> = {
@@ -112,6 +118,23 @@ const COMMAND_DETAIL: Record<CommandName, string[]> = {
     '옵션: --keyword, --lat, --lng, --page, --pageSize, --json',
     '예시: daiso inventory 1034604 --keyword 강남역',
   ],
+  'cu-stores': [
+    '명령: cu-stores',
+    '설명: CU 매장 검색 API를 호출합니다.',
+    '사용법: daiso cu-stores [keyword] [--lat 값] [--lng 값] [--limit N] [--json]',
+    '옵션: --keyword, --lat, --lng, --limit, --json',
+    '예시: daiso cu-stores 강남',
+    '예시: daiso cu-stores --lat 37.498 --lng 127.027 --limit 10',
+  ],
+  'cu-inventory': [
+    '명령: cu-inventory',
+    '설명: CU 재고 검색 API를 호출합니다.',
+    '사용법: daiso cu-inventory <keyword> [--storeKeyword 값] [--lat 값] [--lng 값] [--size N] [--offset N] [--json]',
+    '필수: <keyword>',
+    '옵션: --storeKeyword, --lat, --lng, --size, --offset, --searchSort, --storeLimit, --json',
+    '예시: daiso cu-inventory 과자',
+    '예시: daiso cu-inventory 컵라면 --storeKeyword 강남 --size 10',
+  ],
 };
 
 export function printHelp(writeOut: (message: string) => void): void {
@@ -138,6 +161,8 @@ export function printHelp(writeOut: (message: string) => void): void {
   writeOut('  npx daiso products 수납박스');
   writeOut('  npx daiso stores 강남역');
   writeOut('  npx daiso inventory 1034604 --keyword 강남역');
+  writeOut('  npx daiso cu-stores 강남');
+  writeOut('  npx daiso cu-inventory 과자 --storeKeyword 강남');
   writeOut('  npx daiso get /api/cgv/movies --playDate 20260307 --theaterCode 0056');
   writeOut('');
   writeOut('상세 도움말:');
@@ -151,7 +176,9 @@ export function printCommandHelp(
 ): number {
   if (!Object.hasOwn(COMMAND_DETAIL, command)) {
     writeErr(`도움말을 찾을 수 없는 명령어: ${command}`);
-    writeErr('사용 가능한 명령어: help, version, url, health, claude, get, products, product, stores, inventory');
+    writeErr(
+      '사용 가능한 명령어: help, version, url, health, claude, get, products, product, stores, inventory, cu-stores, cu-inventory',
+    );
     return 1;
   }
 

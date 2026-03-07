@@ -146,6 +146,9 @@ export function renderApiEnvelope(command: string, url: URL, payload: unknown): 
     lines.push(...formatProductDetail(data));
   } else if (command === 'inventory') {
     lines.push(...formatInventory(data));
+  } else if (command === 'cu-inventory') {
+    lines.push(...formatCollection('매장 목록', isRecord(data.nearbyStores) ? data.nearbyStores.stores : undefined));
+    lines.push(...formatCollection('재고 항목', isRecord(data.inventory) ? data.inventory.items : undefined));
   } else {
     lines.push(...formatCollection('제품 목록', data.products));
     lines.push(...formatCollection('매장 목록', data.stores));

@@ -43,6 +43,15 @@ interface OliveyoungProductPreview {
   o2oRemainQuantity: number;
 }
 
+interface CuInventoryPreview {
+  itemCode: string;
+  itemName: string;
+  price: number;
+  pickupYn: boolean;
+  deliveryYn: boolean;
+  reserveYn: boolean;
+}
+
 const BASE_URL = 'https://mcp.aka.page';
 
 function createPrompt(): InteractivePrompt {
@@ -79,7 +88,7 @@ async function fetchEnvelope(
 
 async function fetchStoresWithKeywordFallback(
   fetchImpl: FetchLike,
-  service: 'daiso' | 'oliveyoung',
+  service: 'daiso' | 'oliveyoung' | 'cu',
   keyword: string,
 ): Promise<{ stores: InteractiveStore[]; matchedKeyword: string }> {
   const candidates = service === 'daiso' ? buildDaisoStoreKeywordVariants(keyword) : [keyword];
@@ -290,6 +299,75 @@ async function runOliveyoungItemSearch(
   deps.writeOut(`- 남은수량: ${selected.o2oRemainQuantity}`);
 }
 
+async function runCuItemSearch(
+  deps: InteractiveCliDeps,
+  prompt: InteractivePrompt,
+  store: InteractiveStore,
+): Promise<void> {
+  const keyword = await askNonEmpty(prompt, '찾을 상품 키워드를 입력하세요: ');
+  const payload = await fetchEnvelope(deps.fetchImpl, '/api/cu/inventory', {
+    keyword,
+    storeKeyword: store.name,
+    size: '10',
+    storeLimit: '10',
+  });
+
+  if (!isRecord(payload) || payload.success !== true || !isRecord(payload.data)) {
+    deps.writeOut('재고 응답을 해석하지 못했습니다.');
+    return;
+  }
+
+  const inventory = payload.data.inventory;
+  if (!isRecord(inventory) || !Array.isArray(inventory.items)) {
+    deps.writeOut('CU 상품 데이터가 없습니다.');
+    return;
+  }
+
+  const items: CuInventoryPreview[] = inventory.items
+    .filter((entry): entry is Record<string, unknown> => isRecord(entry))
+    .map((entry) => ({
+      itemCode: toText(entry.itemCode),
+      itemName: toText(entry.itemName),
+      price: Number.parseInt(toText(entry.price), 10) || 0,
+      pickupYn: toText(entry.pickupYn).toLowerCase() === 'true',
+      deliveryYn: toText(entry.deliveryYn).toLowerCase() === 'true',
+      reserveYn: toText(entry.reserveYn).toLowerCase() === 'true',
+    }))
+    .filter((entry) => entry.itemName.length > 0);
+
+  deps.writeOut('');
+  deps.writeOut('[재고 결과]');
+  deps.writeOut(`- 매장: ${store.name}`);
+  deps.writeOut(`- 검색어: ${keyword}`);
+
+  if (items.length === 0) {
+    deps.writeOut('- 검색된 상품이 없습니다.');
+    return;
+  }
+
+  const selected = await pickFromList({
+    prompt,
+    writeOut: deps.writeOut,
+    title: '[상품 선택]',
+    emptyText: '검색된 상품이 없습니다.',
+    cancelText: '상품 선택을 취소했습니다.',
+    items,
+    renderItem: (item, index) => `${index + 1}. ${item.itemName} (${item.price}원)`,
+    filterText: (item) => `${item.itemName} ${item.itemCode}`,
+    indexText: '입력: 번호 선택 | /키워드 필터 | all 전체보기 | 0 취소',
+  });
+
+  if (!selected) {
+    return;
+  }
+
+  deps.writeOut(`- 상품: ${selected.itemName}`);
+  deps.writeOut(`- 가격: ${selected.price}원`);
+  deps.writeOut(`- 픽업 가능: ${selected.pickupYn ? '예' : '아니오'}`);
+  deps.writeOut(`- 배달 가능: ${selected.deliveryYn ? '예' : '아니오'}`);
+  deps.writeOut(`- 예약 가능: ${selected.reserveYn ? '예' : '아니오'}`);
+}
+
 /**
  * 테스트 전용 내부 헬퍼 노출
  */
@@ -308,6 +386,7 @@ export const cliInteractiveTestables = {
   printStoreDetail,
   runDaisoItemSearch,
   runOliveyoungItemSearch,
+  runCuItemSearch,
 };
 
 export async function runInteractiveCli(deps: InteractiveCliDeps): Promise<number> {
@@ -322,17 +401,19 @@ export async function runInteractiveCli(deps: InteractiveCliDeps): Promise<numbe
       deps.writeOut('[서비스 선택]');
       deps.writeOut('1. 다이소');
       deps.writeOut('2. 올리브영');
+      deps.writeOut('3. CU');
 
       const serviceChoice = await askMenu(prompt, '서비스 번호를 선택하세요 (0: 종료):', [
         '다이소',
         '올리브영',
+        'CU',
       ]);
 
       if (serviceChoice === 0) {
         break;
       }
 
-      const service = serviceChoice === 1 ? 'daiso' : 'oliveyoung';
+      const service = serviceChoice === 1 ? 'daiso' : serviceChoice === 2 ? 'oliveyoung' : 'cu';
       const storeKeyword = await askNonEmpty(prompt, '매장 검색 키워드를 입력하세요: ');
       const storeResult = await fetchStoresWithKeywordFallback(deps.fetchImpl, service, storeKeyword);
       const stores = storeResult.stores;
@@ -372,8 +453,10 @@ export async function runInteractiveCli(deps: InteractiveCliDeps): Promise<numbe
       while (keepItemSearch) {
         if (service === 'daiso') {
           await runDaisoItemSearch(deps, prompt, selectedStore);
-        } else {
+        } else if (service === 'oliveyoung') {
           await runOliveyoungItemSearch(deps, prompt, selectedStore);
+        } else {
+          await runCuItemSearch(deps, prompt, selectedStore);
         }
 
         const nextAction = await askNextAction(prompt, deps.writeOut);

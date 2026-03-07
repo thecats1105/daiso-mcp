@@ -17,6 +17,7 @@ import {
   fetchOliveyoungProducts,
   fetchOliveyoungStores,
 } from '../services/oliveyoung/client.js';
+import { fetchCuStock, fetchCuStores } from '../services/cu/client.js';
 import { type ApiContext, errorResponse, successResponse } from './response.js';
 
 /**
@@ -249,5 +250,108 @@ export async function handleOliveyoungCheckInventory(c: ApiContext) {
   } catch (error) {
     const message = error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.';
     return errorResponse(c, 'OLIVEYOUNG_INVENTORY_CHECK_FAILED', message, 500);
+  }
+}
+
+/**
+ * CU 매장 검색 API 핸들러
+ * GET /api/cu/stores?keyword={키워드}&lat={위도}&lng={경도}
+ */
+export async function handleCuFindStores(c: ApiContext) {
+  const keyword = c.req.query('keyword') || '';
+  const lat = parseFloat(c.req.query('lat') || '37.5665');
+  const lng = parseFloat(c.req.query('lng') || '126.978');
+  const limit = parseInt(c.req.query('limit') || '20');
+
+  try {
+    const result = await fetchCuStores(
+      {
+        latitude: lat,
+        longitude: lng,
+        searchWord: keyword,
+      },
+      {
+        timeout: 15000,
+      },
+    );
+
+    return successResponse(
+      c,
+      {
+        location: { latitude: lat, longitude: lng },
+        keyword,
+        stores: result.stores.slice(0, limit),
+      },
+      { total: result.totalCount, pageSize: limit },
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.';
+    return errorResponse(c, 'CU_STORE_SEARCH_FAILED', message, 500);
+  }
+}
+
+/**
+ * CU 재고 검색 API 핸들러
+ * GET /api/cu/inventory?keyword={검색어}&lat={위도}&lng={경도}
+ */
+export async function handleCuCheckInventory(c: ApiContext) {
+  const keyword = c.req.query('keyword');
+  const storeKeyword = c.req.query('storeKeyword') || '';
+  const lat = parseFloat(c.req.query('lat') || '37.5665');
+  const lng = parseFloat(c.req.query('lng') || '126.978');
+  const size = parseInt(c.req.query('size') || '20');
+  const offset = parseInt(c.req.query('offset') || '0');
+  const searchSort = c.req.query('searchSort') || 'recom';
+  const storeLimit = parseInt(c.req.query('storeLimit') || '10');
+
+  if (!keyword || keyword.trim().length === 0) {
+    return errorResponse(c, 'MISSING_QUERY', '검색어(keyword)를 입력해주세요.');
+  }
+
+  try {
+    const [storeResult, stockResult] = await Promise.all([
+      fetchCuStores(
+        {
+          latitude: lat,
+          longitude: lng,
+          searchWord: storeKeyword,
+        },
+        {
+          timeout: 15000,
+        },
+      ),
+      fetchCuStock(
+        {
+          keyword,
+          limit: size,
+          offset,
+          searchSort,
+        },
+        {
+          timeout: 15000,
+        },
+      ),
+    ]);
+
+    return successResponse(
+      c,
+      {
+        keyword,
+        location: { latitude: lat, longitude: lng },
+        nearbyStores: {
+          totalCount: storeResult.totalCount,
+          stores: storeResult.stores.slice(0, storeLimit),
+        },
+        inventory: {
+          totalCount: stockResult.totalCount,
+          spellModifyYn: stockResult.spellModifyYn,
+          items: stockResult.items,
+        },
+      },
+      { total: stockResult.totalCount, page: Math.floor(offset / Math.max(size, 1)) + 1, pageSize: size },
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.';
+    return errorResponse(c, 'CU_INVENTORY_CHECK_FAILED', message, 500);
   }
 }

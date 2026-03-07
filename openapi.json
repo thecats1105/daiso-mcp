@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "다이소 MCP API",
-    "description": "다이소 제품 검색, 매장 찾기, 재고 확인을 위한 API입니다.\n\n## 주요 기능\n- 🔍 **제품 검색**: 키워드로 다이소 제품 검색\n- 🏪 **매장 찾기**: 지역/키워드로 매장 검색\n- 📦 **재고 확인**: 온라인 및 오프라인 매장 재고 조회\n- 🎬 **메가박스 지점/영화 조회**: 주변 지점, 상영 목록, 잔여 좌석 조회\n- 🎥 **CGV 지점/영화 조회**: 극장 목록, 영화 목록, 시간표 조회\n\n## 사용 팁\n1. 한글 검색어는 URL 인코딩이 자동 처리됩니다\n2. 재고 확인 시 먼저 제품 검색으로 제품 ID를 확인하세요\n3. 위치 기반 재고 조회 시 lat, lng 파라미터를 활용하세요",
+    "description": "다이소 제품 검색, 매장 찾기, 재고 확인을 위한 API입니다.\n\n## 주요 기능\n- 🔍 **제품 검색**: 키워드로 다이소 제품 검색\n- 🏪 **매장 찾기**: 지역/키워드로 매장 검색\n- 📦 **재고 확인**: 온라인 및 오프라인 매장 재고 조회\n- 🏪 **CU 매장/재고 조회**: CU 매장 탐색 및 상품 재고 검색\n- 🎬 **메가박스 지점/영화 조회**: 주변 지점, 상영 목록, 잔여 좌석 조회\n- 🎥 **CGV 지점/영화 조회**: 극장 목록, 영화 목록, 시간표 조회\n\n## 사용 팁\n1. 한글 검색어는 URL 인코딩이 자동 처리됩니다\n2. 재고 확인 시 먼저 제품 검색으로 제품 ID를 확인하세요\n3. 위치 기반 재고 조회 시 lat, lng 파라미터를 활용하세요",
     "version": "1.0.0",
     "contact": {
       "name": "GitHub Repository",
@@ -500,6 +500,186 @@
           },
           "500": {
             "description": "올리브영 API 호출 실패",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cu/stores": {
+      "get": {
+        "operationId": "cuFindStores",
+        "summary": "CU 매장 검색",
+        "description": "위치(위도/경도)와 키워드로 CU 매장을 검색합니다.",
+        "parameters": [
+          {
+            "name": "keyword",
+            "in": "query",
+            "required": false,
+            "description": "매장명 또는 지역 키워드 (예: 강남, 안산)",
+            "schema": {
+              "type": "string"
+            },
+            "example": "강남"
+          },
+          {
+            "name": "lat",
+            "in": "query",
+            "required": false,
+            "description": "위도 (기본값: 서울 시청 37.5665)",
+            "schema": {
+              "type": "number",
+              "format": "float",
+              "default": 37.5665
+            }
+          },
+          {
+            "name": "lng",
+            "in": "query",
+            "required": false,
+            "description": "경도 (기본값: 서울 시청 126.978)",
+            "schema": {
+              "type": "number",
+              "format": "float",
+              "default": 126.978
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "최대 결과 수",
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "minimum": 1,
+              "maximum": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "검색 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CuStoreSearchResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "CU API 호출 실패",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cu/inventory": {
+      "get": {
+        "operationId": "cuCheckInventory",
+        "summary": "CU 재고 확인",
+        "description": "상품 키워드로 CU 재고를 조회하고 주변 매장 정보를 함께 반환합니다.",
+        "parameters": [
+          {
+            "name": "keyword",
+            "in": "query",
+            "required": true,
+            "description": "재고를 확인할 상품 키워드",
+            "schema": {
+              "type": "string"
+            },
+            "example": "과자"
+          },
+          {
+            "name": "lat",
+            "in": "query",
+            "required": false,
+            "description": "위도 (기본값: 서울 시청 37.5665)",
+            "schema": {
+              "type": "number",
+              "format": "float",
+              "default": 37.5665
+            }
+          },
+          {
+            "name": "lng",
+            "in": "query",
+            "required": false,
+            "description": "경도 (기본값: 서울 시청 126.978)",
+            "schema": {
+              "type": "number",
+              "format": "float",
+              "default": 126.978
+            }
+          },
+          {
+            "name": "storeKeyword",
+            "in": "query",
+            "required": false,
+            "description": "주변 매장 필터 키워드",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "description": "재고 검색 결과 수",
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "description": "재고 검색 시작 오프셋",
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "minimum": 0
+            }
+          },
+          {
+            "name": "searchSort",
+            "in": "query",
+            "required": false,
+            "description": "재고 정렬 방식",
+            "schema": {
+              "type": "string",
+              "default": "recom"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CuInventoryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 요청 (검색어 누락)",
             "content": {
               "application/json": {
                 "schema": {
@@ -1691,6 +1871,212 @@
             "type": "object",
             "properties": {
               "total": {
+                "type": "integer"
+              },
+              "pageSize": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      },
+      "CuStore": {
+        "type": "object",
+        "description": "CU 매장 정보",
+        "properties": {
+          "storeCode": {
+            "type": "string",
+            "example": "28376"
+          },
+          "storeName": {
+            "type": "string",
+            "example": "중앙하이츠빌점"
+          },
+          "phone": {
+            "type": "string",
+            "example": "0315088023"
+          },
+          "address": {
+            "type": "string",
+            "example": "경기도 안산시 단원구 안산천서로 23"
+          },
+          "latitude": {
+            "type": "number",
+            "format": "float",
+            "example": 37.318482
+          },
+          "longitude": {
+            "type": "number",
+            "format": "float",
+            "example": 126.841838
+          },
+          "distanceM": {
+            "type": "number",
+            "example": 97
+          },
+          "stock": {
+            "type": "integer",
+            "example": 10
+          },
+          "deliveryYn": {
+            "type": "boolean",
+            "example": true
+          },
+          "pickupYn": {
+            "type": "boolean",
+            "example": false
+          },
+          "reserveYn": {
+            "type": "boolean",
+            "example": false
+          }
+        }
+      },
+      "CuInventoryItem": {
+        "type": "object",
+        "description": "CU 재고 검색 상품",
+        "properties": {
+          "itemCode": {
+            "type": "string",
+            "example": "8801728108946"
+          },
+          "itemName": {
+            "type": "string",
+            "example": "바삭한 감자칩"
+          },
+          "price": {
+            "type": "integer",
+            "example": 1700
+          },
+          "pickupYn": {
+            "type": "boolean",
+            "example": true
+          },
+          "deliveryYn": {
+            "type": "boolean",
+            "example": true
+          },
+          "reserveYn": {
+            "type": "boolean",
+            "example": false
+          }
+        }
+      },
+      "CuStoreSearchResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "location": {
+                "type": "object",
+                "properties": {
+                  "latitude": {
+                    "type": "number",
+                    "format": "float"
+                  },
+                  "longitude": {
+                    "type": "number",
+                    "format": "float"
+                  }
+                }
+              },
+              "keyword": {
+                "type": "string"
+              },
+              "stores": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/CuStore"
+                }
+              }
+            }
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer"
+              },
+              "pageSize": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      },
+      "CuInventoryResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "keyword": {
+                "type": "string",
+                "example": "과자"
+              },
+              "location": {
+                "type": "object",
+                "properties": {
+                  "latitude": {
+                    "type": "number",
+                    "format": "float"
+                  },
+                  "longitude": {
+                    "type": "number",
+                    "format": "float"
+                  }
+                }
+              },
+              "nearbyStores": {
+                "type": "object",
+                "properties": {
+                  "totalCount": {
+                    "type": "integer"
+                  },
+                  "stores": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/CuStore"
+                    }
+                  }
+                }
+              },
+              "inventory": {
+                "type": "object",
+                "properties": {
+                  "totalCount": {
+                    "type": "integer"
+                  },
+                  "spellModifyYn": {
+                    "type": "string",
+                    "example": "Y"
+                  },
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/CuInventoryItem"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer"
+              },
+              "page": {
                 "type": "integer"
               },
               "pageSize": {

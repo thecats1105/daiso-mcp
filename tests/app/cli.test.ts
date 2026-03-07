@@ -252,6 +252,45 @@ describe('CLI', () => {
     );
   });
 
+  it('cu-stores 명령은 CU 매장 API를 호출한다', async () => {
+    const { deps } = createDeps();
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({ success: true }),
+    } as unknown as Response);
+    deps.fetchImpl = fetchImpl;
+
+    const exitCode = await runCli(['cu-stores', '강남', '--limit', '5'], deps);
+
+    expect(exitCode).toBe(0);
+    expect(fetchImpl).toHaveBeenCalledWith('https://mcp.aka.page/api/cu/stores?limit=5&keyword=%EA%B0%95%EB%82%A8');
+  });
+
+  it('cu-inventory 명령은 CU 재고 API를 호출한다', async () => {
+    const { deps } = createDeps();
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({ success: true }),
+    } as unknown as Response);
+    deps.fetchImpl = fetchImpl;
+
+    const exitCode = await runCli(['cu-inventory', '과자', '--storeKeyword', '강남'], deps);
+
+    expect(exitCode).toBe(0);
+    expect(fetchImpl).toHaveBeenCalledWith(
+      'https://mcp.aka.page/api/cu/inventory?keyword=%EA%B3%BC%EC%9E%90&storeKeyword=%EA%B0%95%EB%82%A8',
+    );
+  });
+
+  it('cu-inventory 명령은 검색어가 없으면 실패한다', async () => {
+    const { errors, deps } = createDeps();
+
+    const exitCode = await runCli(['cu-inventory'], deps);
+
+    expect(exitCode).toBe(1);
+    expect(errors[0]).toContain('검색어가 필요합니다');
+  });
+
   it('health 명령은 서버 상태를 출력한다', async () => {
     const { output, deps } = createDeps();
 
