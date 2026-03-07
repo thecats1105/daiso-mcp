@@ -9,11 +9,9 @@ import { decodeZyteHttpBody, requestByZyte } from '../../utils/zyte.js';
 import { CGV_API } from './api.js';
 
 function toBase64(bytes: Uint8Array): string {
-  /* c8 ignore start */
   if (typeof Buffer !== 'undefined') {
     return Buffer.from(bytes).toString('base64');
   }
-  /* c8 ignore end */
 
   let binary = '';
   for (const byte of bytes) {
@@ -24,7 +22,6 @@ function toBase64(bytes: Uint8Array): string {
     return btoa(binary);
   }
 
-  /* c8 ignore next */
   throw new Error('Base64 인코딩을 지원하지 않는 런타임입니다.');
 }
 

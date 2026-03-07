@@ -14,6 +14,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
 });
 
 describe('requestCgv', () => {
@@ -36,6 +37,14 @@ describe('requestCgv', () => {
     await expect(
       requestCgv('/cnm/atkt/searchRegnList', new URLSearchParams({ coCd: 'A420' }), 1000),
     ).rejects.toThrow('bad');
+  });
+
+  it('빈 본문 파싱 실패 시 기본 에러 메시지를 던진다', async () => {
+    mockFetch.mockResolvedValueOnce(new Response('', { status: 200 }));
+
+    await expect(
+      requestCgv('/cnm/atkt/searchRegnList', new URLSearchParams({ coCd: 'A420' }), 1000),
+    ).rejects.toThrow('CGV API 응답 파싱 실패');
   });
 
   it('403 + zyteApiKey면 Zyte fallback을 사용한다', async () => {
@@ -81,5 +90,28 @@ describe('requestCgv', () => {
       requestCgv('/cnm/atkt/searchRegnList', new URLSearchParams({ coCd: 'A420' }), 1000),
     ).rejects.toThrow('CGV API 호출 실패: 500');
   });
-});
 
+  it('Buffer가 없고 btoa가 있으면 btoa 경로를 사용한다', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      text: vi.fn().mockResolvedValue(JSON.stringify({ statusCode: 0, data: [] })),
+    } as unknown as Response);
+    const btoaMock = vi.fn().mockReturnValue('encoded');
+
+    vi.stubGlobal('Buffer', undefined);
+    vi.stubGlobal('btoa', btoaMock);
+
+    await requestCgv('/cnm/atkt/searchRegnList', new URLSearchParams({ coCd: 'A420' }), 1000);
+
+    expect(btoaMock).toHaveBeenCalled();
+  });
+
+  it('Base64 인코딩 수단이 없으면 에러를 던진다', async () => {
+    vi.stubGlobal('Buffer', undefined);
+    vi.stubGlobal('btoa', undefined);
+
+    await expect(
+      requestCgv('/cnm/atkt/searchRegnList', new URLSearchParams({ coCd: 'A420' }), 1000),
+    ).rejects.toThrow('Base64 인코딩을 지원하지 않는 런타임입니다.');
+  });
+});

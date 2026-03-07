@@ -340,6 +340,24 @@ async function runOliveyoungItemSearch(
   deps.writeOut(`- 남은수량: ${selected.o2oRemainQuantity}`);
 }
 
+/**
+ * 테스트 전용 내부 헬퍼 노출
+ */
+export const cliInteractiveTestables = {
+  isRecord,
+  toText,
+  fetchEnvelope,
+  parseStores,
+  parseDaisoProducts,
+  askMenu,
+  askYesNo,
+  askNonEmpty,
+  askNextAction,
+  printStoreDetail,
+  runDaisoItemSearch,
+  runOliveyoungItemSearch,
+};
+
 export async function runInteractiveCli(deps: InteractiveCliDeps): Promise<number> {
   const prompt = deps.createPrompt ? deps.createPrompt() : createPrompt();
 

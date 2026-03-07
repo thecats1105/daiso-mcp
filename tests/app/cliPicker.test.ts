@@ -76,4 +76,78 @@ describe('pickFromList', () => {
 
     expect(selected).toBe('홍대점');
   });
+
+  it('빈 목록이면 emptyText를 출력하고 null을 반환한다', async () => {
+    const out: string[] = [];
+    const selected = await pickFromList({
+      prompt: createPrompt(['1']),
+      writeOut: (message) => out.push(message),
+      title: '제목',
+      emptyText: '비어있음',
+      cancelText: '취소',
+      items: [],
+      renderItem: (item, index) => `${index + 1}. ${item}`,
+    });
+
+    expect(selected).toBeNull();
+    expect(out).toContain('비어있음');
+  });
+
+  it('필터 입력이 비어있으면 전체 목록을 유지한다', async () => {
+    const selected = await pickFromList({
+      prompt: createPrompt(['/', '2']),
+      writeOut: () => {},
+      title: '제목',
+      emptyText: '비어있음',
+      cancelText: '취소',
+      items: ['강남점', '홍대점'],
+      renderItem: (item, index) => `${index + 1}. ${item}`,
+    });
+
+    expect(selected).toBe('홍대점');
+  });
+
+  it('필터 결과가 없으면 안내 후 다시 입력받는다', async () => {
+    const out: string[] = [];
+    const selected = await pickFromList({
+      prompt: createPrompt(['/부산', '1']),
+      writeOut: (message) => out.push(message),
+      title: '제목',
+      emptyText: '비어있음',
+      cancelText: '취소',
+      items: ['강남점'],
+      renderItem: (item, index) => `${index + 1}. ${item}`,
+    });
+
+    expect(selected).toBe('강남점');
+    expect(out.join('\n')).toContain('검색 결과가 없습니다.');
+  });
+
+  it('잘못된 번호 입력 후 재입력으로 선택한다', async () => {
+    const selected = await pickFromList({
+      prompt: createPrompt(['x', '9', '1']),
+      writeOut: () => {},
+      title: '제목',
+      emptyText: '비어있음',
+      cancelText: '취소',
+      items: ['강남점'],
+      renderItem: (item, index) => `${index + 1}. ${item}`,
+    });
+
+    expect(selected).toBe('강남점');
+  });
+
+  it('filterText 미지정 시 객체를 JSON 문자열로 필터링한다', async () => {
+    const selected = await pickFromList({
+      prompt: createPrompt(['/"name":"강남점"', '1']),
+      writeOut: () => {},
+      title: '제목',
+      emptyText: '비어있음',
+      cancelText: '취소',
+      items: [{ name: '강남점' }, { name: '홍대점' }],
+      renderItem: (item, index) => `${index + 1}. ${item.name}`,
+    });
+
+    expect(selected).toEqual({ name: '강남점' });
+  });
 });

@@ -66,7 +66,7 @@ describe('runInteractiveCli', () => {
       writeErr: (message: string) => {
         errors.push(message);
       },
-      createPrompt: createPrompt(['1', '강남', '1', '수납', '1', '3']),
+      createPrompt: createPrompt(['1', '강남', '/강남', '1', '수납', '/수납', '1', '3']),
     });
 
     expect(exitCode).toBe(0);
@@ -122,5 +122,105 @@ describe('runInteractiveCli', () => {
     expect(exitCode).toBe(1);
     expect(errors.join('\n')).toContain('인터랙티브 실행 중 오류 발생');
     expect(errors.join('\n')).toContain('network fail');
+  });
+
+  it('올리브영 서비스에서 same-store와 change-store 동작을 처리한다', async () => {
+    const output: string[] = [];
+    const fetchImpl = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        createJsonResponse({
+          success: true,
+          data: {
+            stores: [{ name: '올리브영 강남점', address: '서울 강남구', phone: '02-333-4444' }],
+          },
+        }),
+      )
+      .mockResolvedValueOnce(
+        createJsonResponse({
+          success: true,
+          data: {
+            inventory: {
+              products: [{ goodsNumber: 'G1', goodsName: '선크림A', priceToPay: 12000, o2oRemainQuantity: 3 }],
+            },
+          },
+        }),
+      )
+      .mockResolvedValueOnce(
+        createJsonResponse({
+          success: true,
+          data: {
+            inventory: {
+              products: [{ goodsNumber: 'G2', goodsName: '립밤B', priceToPay: 8000, o2oRemainQuantity: 1 }],
+            },
+          },
+        }),
+      );
+
+    const exitCode = await runInteractiveCli({
+      fetchImpl,
+      writeOut: (message: string) => {
+        output.push(message);
+      },
+      writeErr: () => {},
+      createPrompt: createPrompt([
+        '2',
+        '강남',
+        '/강남',
+        '1',
+        '선크림',
+        '/선크림',
+        '1',
+        '1',
+        '립밤',
+        '/립밤',
+        '1',
+        '2',
+        '0',
+      ]),
+    });
+
+    expect(exitCode).toBe(0);
+    expect(output.join('\n')).toContain('- 상품: 선크림A');
+    expect(output.join('\n')).toContain('- 상품: 립밤B');
+    expect(fetchImpl).toHaveBeenCalledTimes(3);
+  });
+
+  it('매장 선택 취소 후 다시 서비스 선택으로 돌아갈 수 있다', async () => {
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(
+      createJsonResponse({
+        success: true,
+        data: {
+          stores: [{ name: '다이소 강남점', address: '', phone: '02-111-2222' }],
+        },
+      }),
+    );
+
+    const exitCode = await runInteractiveCli({
+      fetchImpl,
+      writeOut: () => {},
+      writeErr: () => {},
+      createPrompt: createPrompt(['1', '강남', '0', '0']),
+    });
+
+    expect(exitCode).toBe(0);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
+  it('요청 중 문자열 오류도 처리한다', async () => {
+    const errors: string[] = [];
+    const fetchImpl = vi.fn<typeof fetch>().mockRejectedValue('network down');
+
+    const exitCode = await runInteractiveCli({
+      fetchImpl,
+      writeOut: () => {},
+      writeErr: (message: string) => {
+        errors.push(message);
+      },
+      createPrompt: createPrompt(['1', '강남']),
+    });
+
+    expect(exitCode).toBe(1);
+    expect(errors.join('\n')).toContain('network down');
   });
 });
