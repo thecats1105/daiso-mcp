@@ -75,6 +75,7 @@ describe('cliInteractiveTestables', () => {
       '안산중앙역',
       '안산중앙',
     ]);
+    expect(cliInteractiveTestables.buildDaisoStoreKeywordVariants('   ')).toEqual([]);
   });
 
   it('다이소 매장 검색어 fallback을 처리한다', async () => {
@@ -104,6 +105,18 @@ describe('cliInteractiveTestables', () => {
       2,
       'https://mcp.aka.page/api/daiso/stores?keyword=%EC%95%88%EC%82%B0%EC%A4%91%EC%95%99%EC%97%AD&limit=10',
     );
+  });
+
+  it('다이소 fallback 후보가 비면 원본 검색어로 1회 조회한다', async () => {
+    const fetchImpl = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(createJsonResponse({ success: true, data: { stores: [] } }));
+
+    const result = await cliInteractiveTestables.fetchStoresWithKeywordFallback(fetchImpl, 'daiso', '   ');
+
+    expect(result.matchedKeyword).toBe('   ');
+    expect(result.stores).toEqual([]);
+    expect(fetchImpl).toHaveBeenCalledWith('https://mcp.aka.page/api/daiso/stores?keyword=+++&limit=10');
   });
 
   it('fetchEnvelope는 HTTP 오류를 처리한다', async () => {

@@ -106,6 +106,30 @@ describe('runInteractiveCli', () => {
     expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
 
+  it('올리브영 매장 검색 결과가 없으면 힌트 없이 종료할 수 있다', async () => {
+    const output: string[] = [];
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(
+      createJsonResponse({
+        success: true,
+        data: { stores: [] },
+      }),
+    );
+
+    const exitCode = await runInteractiveCli({
+      fetchImpl,
+      writeOut: (message: string) => {
+        output.push(message);
+      },
+      writeErr: () => {},
+      createPrompt: createPrompt(['2', '없는매장', 'n']),
+    });
+
+    expect(exitCode).toBe(0);
+    expect(output.join('\n')).toContain('검색된 매장이 없습니다.');
+    expect(output.join('\n')).not.toContain('힌트: "안산 중앙역"');
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
   it('다이소 매장 검색어를 자동 보정해 검색 결과를 찾는다', async () => {
     const output: string[] = [];
     const errors: string[] = [];
