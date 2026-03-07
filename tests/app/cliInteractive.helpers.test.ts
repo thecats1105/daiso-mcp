@@ -395,6 +395,57 @@ describe('cliInteractiveTestables', () => {
               success: true,
               data: {
                 inventory: {
+                  items: [{ itemCode: '8801' }],
+                },
+              },
+            }),
+          ),
+      },
+      createPrompt(['과자']),
+      store,
+    );
+    expect(out.join('\n')).toContain('검색된 상품이 없습니다.');
+
+    await cliInteractiveTestables.runCuItemSearch(
+      {
+        ...depsBase,
+        fetchImpl: vi
+          .fn<typeof fetch>()
+          .mockResolvedValueOnce(
+            createJsonResponse({
+              success: true,
+              data: {
+                inventory: {
+                  items: [
+                    {
+                      itemCode: '8801',
+                      itemName: '감자칩',
+                      price: 1700,
+                      pickupYn: true,
+                      deliveryYn: false,
+                      reserveYn: false,
+                    },
+                  ],
+                },
+              },
+            }),
+          ),
+      },
+      createPrompt(['과자', '/감자', '0']),
+      store,
+    );
+    expect(out.join('\n')).toContain('상품 선택을 취소했습니다.');
+
+    await cliInteractiveTestables.runCuItemSearch(
+      {
+        ...depsBase,
+        fetchImpl: vi
+          .fn<typeof fetch>()
+          .mockResolvedValueOnce(
+            createJsonResponse({
+              success: true,
+              data: {
+                inventory: {
                   items: [
                     {
                       itemCode: '8801',
@@ -415,5 +466,37 @@ describe('cliInteractiveTestables', () => {
     );
     expect(out.join('\n')).toContain('픽업 가능: 예');
     expect(out.join('\n')).toContain('배달 가능: 아니오');
+
+    await cliInteractiveTestables.runCuItemSearch(
+      {
+        ...depsBase,
+        fetchImpl: vi
+          .fn<typeof fetch>()
+          .mockResolvedValueOnce(
+            createJsonResponse({
+              success: true,
+              data: {
+                inventory: {
+                  items: [
+                    {
+                      itemCode: '9901',
+                      itemName: '콜라',
+                      price: 2000,
+                      pickupYn: false,
+                      deliveryYn: true,
+                      reserveYn: true,
+                    },
+                  ],
+                },
+              },
+            }),
+          ),
+      },
+      createPrompt(['음료', '1']),
+      store,
+    );
+    expect(out.join('\n')).toContain('픽업 가능: 아니오');
+    expect(out.join('\n')).toContain('배달 가능: 예');
+    expect(out.join('\n')).toContain('예약 가능: 예');
   });
 });

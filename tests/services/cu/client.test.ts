@@ -71,6 +71,81 @@ describe('fetchCuStores', () => {
       }),
     );
   });
+
+  it('도로명 주소와 boolean YN 값을 처리한다', async () => {
+    mockFetch.mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          totalCnt: 1,
+          storeList: [
+            {
+              storeCd: '100',
+              storeNm: '도로명점',
+              doroStoreAddr1: '서울특별시 강남구',
+              doroStoreAddr2: '테헤란로 123',
+              deliveryYn: true,
+              jumpoPickYn: false,
+              reserveYn: true,
+            },
+          ],
+        }),
+      ),
+    );
+
+    const result = await fetchCuStores({ latitude: 37.5, longitude: 127.0 });
+
+    expect(result.stores[0].address).toBe('서울특별시 강남구 테헤란로 123');
+    expect(result.stores[0].deliveryYn).toBe(true);
+    expect(result.stores[0].pickupYn).toBe(false);
+    expect(result.stores[0].reserveYn).toBe(true);
+  });
+
+  it('storeList/totalCnt 누락 시 기본값을 사용한다', async () => {
+    mockFetch.mockResolvedValue(new Response(JSON.stringify({})));
+
+    const result = await fetchCuStores({ latitude: 37.5, longitude: 127.0 });
+
+    expect(result.totalCount).toBe(0);
+    expect(result.stores).toEqual([]);
+  });
+
+  it('매장명이 없으면 빈 문자열로 처리한다', async () => {
+    mockFetch.mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          totalCnt: 1,
+          storeList: [{ storeCd: 'x1' }],
+        }),
+      ),
+    );
+
+    const result = await fetchCuStores({ latitude: 37.5, longitude: 127.0 });
+    expect(result.stores[0].storeName).toBe('');
+  });
+
+  it('비정상 숫자/문자 값은 0으로 보정하고 storeCode 기본값을 사용한다', async () => {
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        totalCnt: 1,
+        storeList: [
+          {
+            storeNm: '테스트점',
+            latVal: Number.POSITIVE_INFINITY,
+            longVal: Number.NaN,
+            stock: 'abc',
+          },
+        ],
+      }),
+    } as unknown as Response);
+
+    const result = await fetchCuStores({ latitude: 37.5, longitude: 127.0 });
+
+    expect(result.stores[0].storeCode).toBe('');
+    expect(result.stores[0].latitude).toBe(0);
+    expect(result.stores[0].longitude).toBe(0);
+    expect(result.stores[0].stock).toBe(0);
+  });
 });
 
 describe('primeCuStockDisplay', () => {
@@ -150,5 +225,42 @@ describe('fetchCuStock', () => {
 
     expect(result.totalCount).toBe(0);
     expect(result.items).toEqual([]);
+  });
+
+  it('검색 결과 구조가 비어있으면 기본값을 사용한다', async () => {
+    mockFetch
+      .mockResolvedValueOnce(new Response(JSON.stringify({ areaList: [] })))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: {} })));
+
+    const result = await fetchCuStock({ keyword: '과자', limit: 8, offset: 0, searchSort: 'recom' });
+
+    expect(result.totalCount).toBe(0);
+    expect(result.spellModifyYn).toBe('N');
+    expect(result.items).toEqual([]);
+  });
+
+  it('아이템 필드 누락 시 기본값을 사용한다', async () => {
+    mockFetch
+      .mockResolvedValueOnce(new Response(JSON.stringify({ areaList: [] })))
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            spellModifyYn: 'N',
+            data: {
+              stockResult: {
+                result: {
+                  total_count: 1,
+                  rows: [{ fields: {} }],
+                },
+              },
+            },
+          }),
+        ),
+      );
+
+    const result = await fetchCuStock({ keyword: '과자', limit: 8, offset: 0, searchSort: 'recom' });
+
+    expect(result.items[0].itemCode).toBe('');
+    expect(result.items[0].itemName).toBe('');
   });
 });

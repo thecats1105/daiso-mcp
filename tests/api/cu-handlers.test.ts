@@ -66,6 +66,30 @@ describe('handleCuFindStores', () => {
       500,
     );
   });
+
+  it('keyword 없이도 기본 검색을 수행한다', async () => {
+    mockFetch.mockResolvedValue(new Response(JSON.stringify({ totalCnt: 0, storeList: [] })));
+
+    const ctx = createMockContext({});
+    await handleCuFindStores(ctx);
+
+    expect(ctx.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
+  });
+
+  it('CU 매장 검색의 알 수 없는 에러를 처리한다', async () => {
+    mockFetch.mockRejectedValue(123);
+
+    const ctx = createMockContext({ keyword: '강남' });
+    await handleCuFindStores(ctx);
+
+    expect(ctx.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: false,
+        error: { code: 'CU_STORE_SEARCH_FAILED', message: '알 수 없는 오류가 발생했습니다.' },
+      }),
+      500,
+    );
+  });
 });
 
 describe('handleCuCheckInventory', () => {
@@ -144,6 +168,21 @@ describe('handleCuCheckInventory', () => {
       expect.objectContaining({
         success: false,
         error: { code: 'CU_INVENTORY_CHECK_FAILED', message: 'cu inventory fail' },
+      }),
+      500,
+    );
+  });
+
+  it('CU 재고 검색의 알 수 없는 에러를 처리한다', async () => {
+    mockFetch.mockRejectedValue(undefined);
+
+    const ctx = createMockContext({ keyword: '과자' });
+    await handleCuCheckInventory(ctx);
+
+    expect(ctx.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: false,
+        error: { code: 'CU_INVENTORY_CHECK_FAILED', message: '알 수 없는 오류가 발생했습니다.' },
       }),
       500,
     );
