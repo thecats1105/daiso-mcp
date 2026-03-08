@@ -3,7 +3,12 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { fetchCuStock, fetchCuStores, primeCuStockDisplay } from '../../../src/services/cu/client.js';
+import {
+  fetchCuStock,
+  fetchCuStores,
+  geocodeCuAddress,
+  primeCuStockDisplay,
+} from '../../../src/services/cu/client.js';
 
 const mockFetch = vi.fn();
 
@@ -452,5 +457,93 @@ describe('fetchCuStock', () => {
     expect(result.items[0].itemCode).toBe('');
     expect(result.items[0].onItemNo).toBe('');
     expect(result.items[0].itemName).toBe('');
+  });
+});
+
+describe('geocodeCuAddress', () => {
+  it('Google Geocoding 성공 시 좌표를 반환한다', async () => {
+    mockFetch.mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          status: 'OK',
+          results: [
+            {
+              geometry: {
+                location: {
+                  lat: 37.3172188,
+                  lng: 126.8354271,
+                },
+              },
+            },
+          ],
+        }),
+      ),
+    );
+
+    const result = await geocodeCuAddress('경기도 안산시 단원구 중앙대로 885', {
+      googleMapsApiKey: 'test-google-key',
+    });
+
+    expect(result).toEqual({ latitude: 37.3172188, longitude: 126.8354271 });
+  });
+
+  it('API 키가 없으면 null을 반환한다', async () => {
+    const result = await geocodeCuAddress('경기도 안산시 단원구 중앙대로 885');
+    expect(result).toBeNull();
+  });
+
+  it('빈 주소면 null을 반환한다', async () => {
+    const result = await geocodeCuAddress('   ', {
+      googleMapsApiKey: 'test-google-key',
+    });
+    expect(result).toBeNull();
+  });
+
+  it('status가 OK가 아니면 null을 반환한다', async () => {
+    mockFetch.mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          status: 'ZERO_RESULTS',
+          results: [],
+        }),
+      ),
+    );
+
+    const result = await geocodeCuAddress('없는주소', {
+      googleMapsApiKey: 'test-google-key',
+    });
+    expect(result).toBeNull();
+  });
+
+  it('좌표 결과가 없으면 null을 반환한다', async () => {
+    mockFetch.mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          status: 'OK',
+          results: [],
+        }),
+      ),
+    );
+
+    const result = await geocodeCuAddress('경기도 안산시 단원구 중앙대로 885', {
+      googleMapsApiKey: 'test-google-key',
+    });
+    expect(result).toBeNull();
+  });
+
+  it('좌표값이 0이면 null을 반환한다', async () => {
+    mockFetch.mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          status: 'OK',
+          results: [{ geometry: { location: { lat: 0, lng: 127.0 } } }],
+        }),
+      ),
+    );
+
+    const result = await geocodeCuAddress('경기도 안산시 단원구 중앙대로 885', {
+      googleMapsApiKey: 'test-google-key',
+    });
+    expect(result).toBeNull();
   });
 });

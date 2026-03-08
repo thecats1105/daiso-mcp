@@ -4,7 +4,7 @@
 
 import * as z from 'zod';
 import type { McpToolResponse, ToolRegistration } from '../../../core/types.js';
-import { fetchCuStock, fetchCuStores } from '../client.js';
+import { fetchCuStock, fetchCuStores, geocodeCuAddress } from '../client.js';
 
 interface CheckInventoryArgs {
   keyword: string;
@@ -55,7 +55,7 @@ async function checkInventory(args: CheckInventoryArgs): Promise<McpToolResponse
 
   // 좌표 미입력 + 매장 키워드 입력 시, 키워드 기반 매장 검색 결과를 우선 사용합니다.
   if (!hasInputLocation && storeKeyword.trim().length > 0) {
-    storeResult = await fetchCuStores(
+    const keywordStoreResult = await fetchCuStores(
       {
         searchWord: storeKeyword,
       },
@@ -63,6 +63,34 @@ async function checkInventory(args: CheckInventoryArgs): Promise<McpToolResponse
         timeout: timeoutMs,
       },
     );
+    const firstAddress = keywordStoreResult.stores.find((store) => store.address.trim().length > 0)?.address || '';
+    if (firstAddress.length > 0) {
+      const googleMapsApiKey = process.env.GOOGLE_MAPS_API_KEY;
+      const geocoded = await geocodeCuAddress(firstAddress, {
+        timeout: timeoutMs,
+        googleMapsApiKey,
+      });
+      if (geocoded) {
+        const hasStockSeed = !!firstStockItem?.itemCode;
+        storeResult = await fetchCuStores(
+          {
+            latitude: geocoded.latitude,
+            longitude: geocoded.longitude,
+            searchWord: storeKeyword,
+            itemCd: firstStockItem?.itemCode || '',
+            onItemNo: firstStockItem?.onItemNo || '',
+            jipCd: firstStockItem?.itemCode || '',
+            isRecommend: hasStockSeed ? 'Y' : '',
+            recommendId: hasStockSeed ? 'stock' : '',
+            pageType: hasStockSeed ? 'search_improve stock_sch_improve' : 'search_improve',
+          },
+          {
+            timeout: timeoutMs,
+          },
+        );
+      }
+    }
+    storeResult ||= keywordStoreResult;
   }
 
   if (!storeResult) {

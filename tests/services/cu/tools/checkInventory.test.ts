@@ -137,6 +137,43 @@ describe('createCheckInventoryTool', () => {
     );
   });
 
+  it('주소가 있어도 Google 키가 없으면 키워드 매장 결과를 그대로 사용한다', async () => {
+    delete process.env.GOOGLE_MAPS_API_KEY;
+
+    mockFetch
+      .mockResolvedValueOnce(new Response(JSON.stringify({ areaList: [] })))
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            spellModifyYn: 'N',
+            data: { stockResult: { result: { total_count: 0, rows: [] } } },
+          }),
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          `
+          <table>
+            <tbody>
+              <tr>
+                <td><span class="name">안산중앙역에코점</span></td>
+                <td><div class="detail_info"><address><a href="#">경기도 안산시 단원구 중앙대로 885</a></address></div></td>
+              </tr>
+            </tbody>
+          </table>
+          `,
+        ),
+      );
+
+    const tool = createCheckInventoryTool();
+    const result = await tool.handler({ keyword: '치킨', storeKeyword: '안산 중앙역' });
+    const parsed = JSON.parse(result.content[0].text);
+
+    expect(parsed.nearbyStores.totalCount).toBe(1);
+    expect(parsed.nearbyStores.stores[0].storeName).toBe('안산중앙역에코점');
+    expect(mockFetch).toHaveBeenCalledTimes(3);
+  });
+
   it('재고 시드가 없으면 매장 조회 추천 파라미터를 비워서 호출한다', async () => {
     mockFetch
       .mockResolvedValueOnce(new Response(JSON.stringify({ areaList: [] })))
@@ -158,5 +195,126 @@ describe('createCheckInventoryTool', () => {
     expect(body.isRecommend).toBe('');
     expect(body.recommendId).toBe('');
     expect(body.pageType).toBe('search_improve');
+  });
+
+  it('storeKeyword 기반 지오코딩이 성공하면 좌표 기반 재조회한다', async () => {
+    const prevGoogleKey = process.env.GOOGLE_MAPS_API_KEY;
+    process.env.GOOGLE_MAPS_API_KEY = 'test-google-key';
+
+    mockFetch
+      .mockResolvedValueOnce(new Response(JSON.stringify({ areaList: [] })))
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            spellModifyYn: 'N',
+            data: {
+              stockResult: {
+                result: {
+                  total_count: 1,
+                  rows: [
+                    {
+                      fields: {
+                        item_cd: '2202000140047',
+                        on_item_no: '2026020061628',
+                        item_nm: '해동)핫스파이시닭강정',
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          }),
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          `
+          <table>
+            <tbody>
+              <tr>
+                <td>
+                  <span class="name">안산중앙역에코점</span>
+                </td>
+                <td>
+                  <div class="detail_info">
+                    <address><a href="#">경기도 안산시 단원구 중앙대로 885</a></address>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          `,
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            status: 'OK',
+            results: [{ geometry: { location: { lat: 37.3172, lng: 126.8354 } } }],
+          }),
+        ),
+      )
+      .mockResolvedValueOnce(new Response(JSON.stringify({ totalCnt: 0, storeList: [] })));
+
+    const tool = createCheckInventoryTool();
+    await tool.handler({ keyword: '치킨', storeKeyword: '안산 중앙역' });
+
+    const geocodeUrl = String(mockFetch.mock.calls[3][0]);
+    expect(geocodeUrl).toContain('maps.googleapis.com/maps/api/geocode/json');
+    const requestInit = mockFetch.mock.calls[4][1] as RequestInit;
+    const body = JSON.parse(String(requestInit.body));
+    expect(body.latVal).toBe('37.3172');
+    expect(body.longVal).toBe('126.8354');
+    expect(body.itemCd).toBe('2202000140047');
+
+    process.env.GOOGLE_MAPS_API_KEY = prevGoogleKey;
+  });
+
+  it('지오코딩 성공 + 재고 시드 없음이면 기본 페이지 타입으로 재조회한다', async () => {
+    const prevGoogleKey = process.env.GOOGLE_MAPS_API_KEY;
+    process.env.GOOGLE_MAPS_API_KEY = 'test-google-key';
+
+    mockFetch
+      .mockResolvedValueOnce(new Response(JSON.stringify({ areaList: [] })))
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            spellModifyYn: 'N',
+            data: { stockResult: { result: { total_count: 0, rows: [] } } },
+          }),
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          `
+          <table><tbody>
+            <tr>
+              <td><span class="name">안산중앙역에코점</span></td>
+              <td><div class="detail_info"><address><a href="#">경기도 안산시 단원구 중앙대로 885</a></address></div></td>
+            </tr>
+          </tbody></table>
+          `,
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            status: 'OK',
+            results: [{ geometry: { location: { lat: 37.3172, lng: 126.8354 } } }],
+          }),
+        ),
+      )
+      .mockResolvedValueOnce(new Response(JSON.stringify({ totalCnt: 0, storeList: [] })));
+
+    const tool = createCheckInventoryTool();
+    await tool.handler({ keyword: '치킨', storeKeyword: '안산 중앙역' });
+
+    const requestInit = mockFetch.mock.calls[4][1] as RequestInit;
+    const body = JSON.parse(String(requestInit.body));
+    expect(body.isRecommend).toBe('');
+    expect(body.recommendId).toBe('');
+    expect(body.pageType).toBe('search_improve');
+
+    process.env.GOOGLE_MAPS_API_KEY = prevGoogleKey;
   });
 });
