@@ -141,8 +141,24 @@ describe('GET /api/daiso/display-location', () => {
     expect(data.error.code).toBe('MISSING_PRODUCT_ID');
   });
 
+  it('productId가 공백이면 에러를 반환한다', async () => {
+    const res = await app.request('/api/daiso/display-location?productId=%20%20%20&storeCode=04515');
+
+    expect(res.status).toBe(400);
+    const data = await res.json();
+    expect(data.error.code).toBe('MISSING_PRODUCT_ID');
+  });
+
   it('storeCode 없이 요청하면 에러를 반환한다', async () => {
     const res = await app.request('/api/daiso/display-location?productId=12345');
+
+    expect(res.status).toBe(400);
+    const data = await res.json();
+    expect(data.error.code).toBe('MISSING_STORE_CODE');
+  });
+
+  it('storeCode가 공백이면 에러를 반환한다', async () => {
+    const res = await app.request('/api/daiso/display-location?productId=12345&storeCode=%20%20%20');
 
     expect(res.status).toBe(400);
     const data = await res.json();

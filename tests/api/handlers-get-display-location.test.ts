@@ -48,8 +48,34 @@ describe('handleGetDisplayLocation', () => {
     );
   });
 
+  it('productId가 공백이면 에러를 반환한다', async () => {
+    const ctx = createMockContext({ productId: '   ', storeCode: '04515' });
+    await handleGetDisplayLocation(ctx);
+
+    expect(ctx.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: false,
+        error: { code: 'MISSING_PRODUCT_ID', message: '상품 ID(productId)를 입력해주세요.' },
+      }),
+      400,
+    );
+  });
+
   it('storeCode가 없으면 에러를 반환한다', async () => {
     const ctx = createMockContext({ productId: '12345' });
+    await handleGetDisplayLocation(ctx);
+
+    expect(ctx.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: false,
+        error: { code: 'MISSING_STORE_CODE', message: '매장 코드(storeCode)를 입력해주세요.' },
+      }),
+      400,
+    );
+  });
+
+  it('storeCode가 공백이면 에러를 반환한다', async () => {
+    const ctx = createMockContext({ productId: '12345', storeCode: '   ' });
     await handleGetDisplayLocation(ctx);
 
     expect(ctx.json).toHaveBeenCalledWith(

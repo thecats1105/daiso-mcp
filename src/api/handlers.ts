@@ -153,14 +153,14 @@ export async function handleCheckInventory(c: ApiContext) {
  * GET /api/daiso/display-location?productId={상품ID}&storeCode={매장코드}
  */
 export async function handleGetDisplayLocation(c: ApiContext) {
-  const productId = c.req.query('productId');
-  const storeCode = c.req.query('storeCode');
+  const productId = c.req.query('productId')?.trim();
+  const storeCode = c.req.query('storeCode')?.trim();
 
-  if (!productId) {
+  if (!productId || productId.length === 0) {
     return errorResponse(c, 'MISSING_PRODUCT_ID', '상품 ID(productId)를 입력해주세요.');
   }
 
-  if (!storeCode) {
+  if (!storeCode || storeCode.length === 0) {
     return errorResponse(c, 'MISSING_STORE_CODE', '매장 코드(storeCode)를 입력해주세요.');
   }
 
