@@ -228,6 +228,29 @@ describe('handleCuCheckInventory', () => {
     );
   });
 
+  it('재고 시드가 없으면 기본 페이지 타입으로 매장 조회한다', async () => {
+    mockFetch
+      .mockResolvedValueOnce(new Response(JSON.stringify({ areaList: [] })))
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            spellModifyYn: 'N',
+            data: { stockResult: { result: { total_count: 0, rows: [] } } },
+          }),
+        ),
+      )
+      .mockResolvedValueOnce(new Response(JSON.stringify({ totalCnt: 0, storeList: [] })));
+
+    const ctx = createMockContext({ keyword: '치킨', lat: '37.3177', lng: '126.8412' });
+    await handleCuCheckInventory(ctx);
+
+    const requestInit = mockFetch.mock.calls[2][1] as RequestInit;
+    const body = JSON.parse(String(requestInit.body));
+    expect(body.isRecommend).toBe('');
+    expect(body.recommendId).toBe('');
+    expect(body.pageType).toBe('search_improve');
+  });
+
   it('keyword가 없으면 에러를 반환한다', async () => {
     const ctx = createMockContext({});
     await handleCuCheckInventory(ctx);

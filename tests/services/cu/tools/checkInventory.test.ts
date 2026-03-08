@@ -136,4 +136,27 @@ describe('createCheckInventoryTool', () => {
       expect.any(Object),
     );
   });
+
+  it('재고 시드가 없으면 매장 조회 추천 파라미터를 비워서 호출한다', async () => {
+    mockFetch
+      .mockResolvedValueOnce(new Response(JSON.stringify({ areaList: [] })))
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            spellModifyYn: 'N',
+            data: { stockResult: { result: { total_count: 0, rows: [] } } },
+          }),
+        ),
+      )
+      .mockResolvedValueOnce(new Response(JSON.stringify({ totalCnt: 0, storeList: [] })));
+
+    const tool = createCheckInventoryTool();
+    await tool.handler({ keyword: '치킨', latitude: 37.3177, longitude: 126.8412 });
+
+    const requestInit = mockFetch.mock.calls[2][1] as RequestInit;
+    const body = JSON.parse(String(requestInit.body));
+    expect(body.isRecommend).toBe('');
+    expect(body.recommendId).toBe('');
+    expect(body.pageType).toBe('search_improve');
+  });
 });

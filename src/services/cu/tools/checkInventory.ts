@@ -53,9 +53,9 @@ async function checkInventory(args: CheckInventoryArgs): Promise<McpToolResponse
   let resolvedLongitude = hasInputLocation ? longitude : undefined;
   let storeResult: Awaited<ReturnType<typeof fetchCuStores>> | null = null;
 
-  // 좌표 미입력 + 매장 키워드 입력 시, 먼저 매장 검색 결과의 좌표를 재사용 시도합니다.
+  // 좌표 미입력 + 매장 키워드 입력 시, 키워드 기반 매장 검색 결과를 우선 사용합니다.
   if (!hasInputLocation && storeKeyword.trim().length > 0) {
-    const keywordStoreResult = await fetchCuStores(
+    storeResult = await fetchCuStores(
       {
         searchWord: storeKeyword,
       },
@@ -63,16 +63,6 @@ async function checkInventory(args: CheckInventoryArgs): Promise<McpToolResponse
         timeout: timeoutMs,
       },
     );
-
-    const storeWithCoordinates = keywordStoreResult.stores.find(
-      (store) => store.latitude !== 0 && store.longitude !== 0,
-    );
-    if (storeWithCoordinates) {
-      resolvedLatitude = storeWithCoordinates.latitude;
-      resolvedLongitude = storeWithCoordinates.longitude;
-    } else {
-      storeResult = keywordStoreResult;
-    }
   }
 
   if (!storeResult) {
