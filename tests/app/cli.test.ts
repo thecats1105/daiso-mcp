@@ -252,6 +252,31 @@ describe('CLI', () => {
     );
   });
 
+  it('display-location 명령은 진열 위치 API를 호출한다', async () => {
+    const { deps } = createDeps();
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({ success: true }),
+    } as unknown as Response);
+    deps.fetchImpl = fetchImpl;
+
+    const exitCode = await runCli(['display-location', '1034604', '04515'], deps);
+
+    expect(exitCode).toBe(0);
+    expect(fetchImpl).toHaveBeenCalledWith(
+      'https://mcp.aka.page/api/daiso/display-location?productId=1034604&storeCode=04515',
+    );
+  });
+
+  it('display-location 명령은 인자가 부족하면 실패한다', async () => {
+    const { errors, deps } = createDeps();
+
+    const exitCode = await runCli(['display-location', '1034604'], deps);
+
+    expect(exitCode).toBe(1);
+    expect(errors[0]).toContain('productId와 storeCode가 필요합니다');
+  });
+
   it('cu-stores 명령은 CU 매장 API를 호출한다', async () => {
     const { deps } = createDeps();
     const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue({

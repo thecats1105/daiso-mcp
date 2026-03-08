@@ -13,6 +13,7 @@ export type CommandName =
   | 'product'
   | 'stores'
   | 'inventory'
+  | 'display-location'
   | 'cu-stores'
   | 'cu-inventory';
 
@@ -27,6 +28,7 @@ export const COMMAND_LIST: CommandName[] = [
   'product',
   'stores',
   'inventory',
+  'display-location',
   'cu-stores',
   'cu-inventory',
 ];
@@ -42,6 +44,7 @@ const COMMAND_SUMMARY: Record<CommandName, string> = {
   product: '다이소 제품 상세 조회',
   stores: '다이소 매장 검색',
   inventory: '다이소 재고 조회',
+  'display-location': '다이소 진열 위치 조회',
   'cu-stores': 'CU 매장 검색',
   'cu-inventory': 'CU 재고 조회',
 };
@@ -118,6 +121,14 @@ const COMMAND_DETAIL: Record<CommandName, string[]> = {
     '옵션: --keyword, --lat, --lng, --page, --pageSize, --json',
     '예시: daiso inventory 1034604 --keyword 강남역',
   ],
+  'display-location': [
+    '명령: display-location',
+    '설명: 다이소 매장 내 상품 진열 위치 API를 호출합니다.',
+    '사용법: daiso display-location <productId> <storeCode> [--json]',
+    '필수: <productId>, <storeCode>',
+    '옵션: --json',
+    '예시: daiso display-location 1034604 04515',
+  ],
   'cu-stores': [
     '명령: cu-stores',
     '설명: CU 매장 검색 API를 호출합니다.',
@@ -161,6 +172,7 @@ export function printHelp(writeOut: (message: string) => void): void {
   writeOut('  npx daiso products 수납박스');
   writeOut('  npx daiso stores 강남역');
   writeOut('  npx daiso inventory 1034604 --keyword 강남역');
+  writeOut('  npx daiso display-location 1034604 04515');
   writeOut('  npx daiso cu-stores 강남');
   writeOut('  npx daiso cu-inventory 과자 --storeKeyword 강남');
   writeOut('  npx daiso get /api/cgv/movies --playDate 20260307 --theaterCode 0056');
@@ -177,7 +189,7 @@ export function printCommandHelp(
   if (!Object.hasOwn(COMMAND_DETAIL, command)) {
     writeErr(`도움말을 찾을 수 없는 명령어: ${command}`);
     writeErr(
-      '사용 가능한 명령어: help, version, url, health, claude, get, products, product, stores, inventory, cu-stores, cu-inventory',
+      '사용 가능한 명령어: help, version, url, health, claude, get, products, product, stores, inventory, display-location, cu-stores, cu-inventory',
     );
     return 1;
   }

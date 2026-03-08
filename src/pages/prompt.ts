@@ -186,6 +186,21 @@ Base URL: ${baseUrl}
 
 ---
 
+### 4-1. 진열 위치 조회
+
+**설명**: 특정 상품이 특정 매장 내 어디에 진열되어 있는지(구역/층) 조회합니다.
+
+**URL**: ${baseUrl}/api/daiso/display-location?productId={제품ID}&storeCode={매장코드}
+
+**필수 파라미터**:
+- productId: 제품 ID (제품 검색 API에서 조회한 id 값)
+- storeCode: 매장 코드 (재고 확인 API 결과의 storeCode 값)
+
+**예시**:
+- ${baseUrl}/api/daiso/display-location?productId=1234567890&storeCode=04515
+
+---
+
 ### 5. 올리브영 매장 찾기
 
 **설명**: 위치 기반으로 주변 올리브영 매장을 검색합니다.
@@ -366,9 +381,11 @@ Base URL: ${baseUrl}
 | MISSING_QUERY | 검색어가 누락됨 |
 | MISSING_PARAMS | 필수 파라미터 누락 |
 | MISSING_PRODUCT_ID | 제품 ID 누락 |
+| MISSING_STORE_CODE | 매장 코드 누락 |
 | NOT_FOUND | 결과를 찾을 수 없음 |
 | SEARCH_FAILED | 검색 실패 |
 | FETCH_FAILED | 데이터 조회 실패 |
+| DISPLAY_LOCATION_FAILED | 진열 위치 조회 실패 |
 | OLIVEYOUNG_STORE_SEARCH_FAILED | 올리브영 매장 조회 실패 |
 | OLIVEYOUNG_INVENTORY_CHECK_FAILED | 올리브영 재고 조회 실패 |
 | MEGABOX_THEATER_SEARCH_FAILED | 메가박스 지점 조회 실패 |
@@ -388,6 +405,7 @@ Base URL: ${baseUrl}
    - 먼저 /api/daiso/products로 제품 검색
    - 결과에서 원하는 제품의 id 확인
    - /api/daiso/inventory에 해당 id로 재고 조회
+   - 진열 위치가 필요하면 /api/daiso/display-location에 productId + storeCode로 조회
 4. **위치 기반 재고**: lat, lng 파라미터로 가까운 매장 우선 조회
 
 ---
@@ -402,6 +420,7 @@ MCP 연결 정보: ${baseUrl}/mcp
 - daiso_find_stores: 매장 검색
 - daiso_check_inventory: 재고 확인
 - daiso_get_price_info: 가격 정보 조회
+- daiso_get_display_location: 진열 위치 조회
 - oliveyoung_find_nearby_stores: 올리브영 주변 매장 탐색
 - oliveyoung_check_inventory: 올리브영 재고 파악
 - megabox_find_nearby_theaters: 메가박스 주변 지점 탐색

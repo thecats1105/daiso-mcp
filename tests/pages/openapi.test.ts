@@ -21,6 +21,7 @@ describe('OpenAPI 페이지', () => {
     expect(spec.openapi).toBe('3.1.0');
     expect(spec.servers[0].url).toBe('https://example.com');
     expect(spec.paths['/api/daiso/products']).toBeDefined();
+    expect(spec.paths['/api/daiso/display-location']).toBeDefined();
     expect(spec.paths['/api/oliveyoung/stores']).toBeDefined();
     expect(spec.paths['/api/cu/stores']).toBeDefined();
     expect(spec.paths['/api/cu/inventory']).toBeDefined();

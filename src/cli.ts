@@ -476,6 +476,37 @@ export async function runCli(argv: string[], deps?: Partial<CliDeps>): Promise<n
     );
   }
 
+  if (command === 'display-location') {
+    const parsed = parseCliArgs(options);
+    if (parsed.options.help === 'true') {
+      return printCommandHelp('display-location', resolvedDeps.writeOut, resolvedDeps.writeErr);
+    }
+
+    const productId = parsed.positionals[0];
+    const storeCode = parsed.positionals[1];
+
+    if (!productId || !storeCode) {
+      resolvedDeps.writeErr(
+        'display-location 명령은 productId와 storeCode가 필요합니다. 예: daiso display-location 1034604 04515',
+      );
+      return 1;
+    }
+
+    const targetUrl = toUrl('/api/daiso/display-location');
+    targetUrl.searchParams.set('productId', productId);
+    targetUrl.searchParams.set('storeCode', storeCode);
+    applyOptionsToQuery(targetUrl, toQueryOptions(parsed.options));
+
+    return await requestAndPrintResponse(
+      resolvedDeps.fetchImpl,
+      resolvedDeps.writeOut,
+      resolvedDeps.writeErr,
+      targetUrl,
+      command,
+      parsed.options.json === 'true',
+    );
+  }
+
   if (command === 'cu-stores') {
     const parsed = parseCliArgs(options);
     if (parsed.options.help === 'true') {

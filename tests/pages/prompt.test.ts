@@ -28,6 +28,7 @@ describe('generatePromptText', () => {
 
     // 재고 확인 API
     expect(text).toContain('/api/daiso/inventory');
+    expect(text).toContain('/api/daiso/display-location');
 
     // 올리브영 API
     expect(text).toContain('/api/oliveyoung/stores');
@@ -70,8 +71,10 @@ describe('generatePromptText', () => {
 
     expect(text).toContain('MISSING_QUERY');
     expect(text).toContain('MISSING_PARAMS');
+    expect(text).toContain('MISSING_STORE_CODE');
     expect(text).toContain('NOT_FOUND');
     expect(text).toContain('SEARCH_FAILED');
+    expect(text).toContain('DISPLAY_LOCATION_FAILED');
     expect(text).toContain('OLIVEYOUNG_STORE_SEARCH_FAILED');
     expect(text).toContain('OLIVEYOUNG_INVENTORY_CHECK_FAILED');
     expect(text).toContain('MEGABOX_THEATER_SEARCH_FAILED');
@@ -90,6 +93,7 @@ describe('generatePromptText', () => {
     expect(text).toContain('daiso_find_stores');
     expect(text).toContain('daiso_check_inventory');
     expect(text).toContain('daiso_get_price_info');
+    expect(text).toContain('daiso_get_display_location');
     expect(text).toContain('oliveyoung_find_nearby_stores');
     expect(text).toContain('oliveyoung_check_inventory');
     expect(text).toContain('megabox_find_nearby_theaters');

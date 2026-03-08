@@ -227,6 +227,82 @@ export const OPENAPI_PATHS_DAISO_OLIVEYOUNG = {
           },
         },
       },
+      '/api/daiso/display-location': {
+        get: {
+          operationId: 'getDisplayLocation',
+          summary: '진열 위치 조회',
+          description: '특정 상품의 매장 내 진열 위치(구역/층)를 조회합니다.',
+          parameters: [
+            {
+              name: 'productId',
+              in: 'query',
+              required: true,
+              description: '제품 ID (제품 검색 결과의 id 값)',
+              schema: { type: 'string' },
+              example: '1234567890',
+            },
+            {
+              name: 'storeCode',
+              in: 'query',
+              required: true,
+              description: '매장 코드 (재고 조회 결과의 storeCode 값)',
+              schema: { type: 'string' },
+              example: '04515',
+            },
+          ],
+          responses: {
+            '200': {
+              description: '조회 성공',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      success: { type: 'boolean', example: true },
+                      data: {
+                        type: 'object',
+                        properties: {
+                          productId: { type: 'string', example: '1234567890' },
+                          storeCode: { type: 'string', example: '04515' },
+                          hasLocation: { type: 'boolean', example: true },
+                          locations: {
+                            type: 'array',
+                            items: {
+                              type: 'object',
+                              properties: {
+                                zoneNo: { type: 'string', example: '60' },
+                                stairNo: { type: 'string', example: '2' },
+                                storeErp: { type: 'string', example: '04515' },
+                              },
+                            },
+                          },
+                          message: { type: 'string', nullable: true, example: null },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            '400': {
+              description: '잘못된 요청 (필수 파라미터 누락)',
+              content: {
+                'application/json': {
+                  schema: { $ref: '#/components/schemas/ErrorResponse' },
+                },
+              },
+            },
+            '500': {
+              description: '진열 위치 조회 실패',
+              content: {
+                'application/json': {
+                  schema: { $ref: '#/components/schemas/ErrorResponse' },
+                },
+              },
+            },
+          },
+        },
+      },
       '/api/oliveyoung/stores': {
         get: {
           operationId: 'oliveyoungFindStores',

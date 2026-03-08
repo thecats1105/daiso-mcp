@@ -155,6 +155,7 @@ npx daiso products 수납박스
 npx daiso product 1034604
 npx daiso stores 강남역
 npx daiso inventory 1034604 --keyword 강남역
+npx daiso display-location 1034604 04515
 npx daiso cu-stores 강남
 npx daiso cu-inventory 과자 --storeKeyword 강남
 npx daiso get /api/cgv/movies --playDate 20260307 --theaterCode 0056

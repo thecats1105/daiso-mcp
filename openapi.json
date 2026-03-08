@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "다이소 MCP API",
-    "description": "다이소 제품 검색, 매장 찾기, 재고 확인을 위한 API입니다.\n\n## 주요 기능\n- 🔍 **제품 검색**: 키워드로 다이소 제품 검색\n- 🏪 **매장 찾기**: 지역/키워드로 매장 검색\n- 📦 **재고 확인**: 온라인 및 오프라인 매장 재고 조회\n- 🏪 **CU 매장/재고 조회**: CU 매장 탐색 및 상품 재고 검색\n- 🎬 **메가박스 지점/영화 조회**: 주변 지점, 상영 목록, 잔여 좌석 조회\n- 🎥 **CGV 지점/영화 조회**: 극장 목록, 영화 목록, 시간표 조회\n\n## 사용 팁\n1. 한글 검색어는 URL 인코딩이 자동 처리됩니다\n2. 재고 확인 시 먼저 제품 검색으로 제품 ID를 확인하세요\n3. 위치 기반 재고 조회 시 lat, lng 파라미터를 활용하세요",
+    "description": "다이소 제품 검색, 매장 찾기, 재고 확인을 위한 API입니다.\n\n## 주요 기능\n- 🔍 **제품 검색**: 키워드로 다이소 제품 검색\n- 🏪 **매장 찾기**: 지역/키워드로 매장 검색\n- 📦 **재고 확인**: 온라인 및 오프라인 매장 재고 조회\n- 🧭 **진열 위치 조회**: 매장 내 상품 구역/층 정보 조회\n- 🏪 **CU 매장/재고 조회**: CU 매장 탐색 및 상품 재고 검색\n- 🎬 **메가박스 지점/영화 조회**: 주변 지점, 상영 목록, 잔여 좌석 조회\n- 🎥 **CGV 지점/영화 조회**: 극장 목록, 영화 목록, 시간표 조회\n\n## 사용 팁\n1. 한글 검색어는 URL 인코딩이 자동 처리됩니다\n2. 재고 확인 시 먼저 제품 검색으로 제품 ID를 확인하세요\n3. 위치 기반 재고 조회 시 lat, lng 파라미터를 활용하세요",
     "version": "1.0.0",
     "contact": {
       "name": "GitHub Repository",
@@ -300,6 +300,115 @@
         }
       }
     },
+    "/api/daiso/display-location": {
+      "get": {
+        "operationId": "getDisplayLocation",
+        "summary": "진열 위치 조회",
+        "description": "특정 상품의 매장 내 진열 위치(구역/층)를 조회합니다.",
+        "parameters": [
+          {
+            "name": "productId",
+            "in": "query",
+            "required": true,
+            "description": "제품 ID (제품 검색 결과의 id 값)",
+            "schema": {
+              "type": "string"
+            },
+            "example": "1234567890"
+          },
+          {
+            "name": "storeCode",
+            "in": "query",
+            "required": true,
+            "description": "매장 코드 (재고 조회 결과의 storeCode 값)",
+            "schema": {
+              "type": "string"
+            },
+            "example": "04515"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "productId": {
+                          "type": "string",
+                          "example": "1234567890"
+                        },
+                        "storeCode": {
+                          "type": "string",
+                          "example": "04515"
+                        },
+                        "hasLocation": {
+                          "type": "boolean",
+                          "example": true
+                        },
+                        "locations": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "zoneNo": {
+                                "type": "string",
+                                "example": "60"
+                              },
+                              "stairNo": {
+                                "type": "string",
+                                "example": "2"
+                              },
+                              "storeErp": {
+                                "type": "string",
+                                "example": "04515"
+                              }
+                            }
+                          }
+                        },
+                        "message": {
+                          "type": "string",
+                          "nullable": true,
+                          "example": null
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 요청 (필수 파라미터 누락)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "진열 위치 조회 실패",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/oliveyoung/stores": {
       "get": {
         "operationId": "oliveyoungFindStores",
@@ -531,22 +640,20 @@
             "name": "lat",
             "in": "query",
             "required": false,
-            "description": "위도 (기본값: 서울 시청 37.5665)",
+            "description": "위도 (선택)",
             "schema": {
               "type": "number",
-              "format": "float",
-              "default": 37.5665
+              "format": "float"
             }
           },
           {
             "name": "lng",
             "in": "query",
             "required": false,
-            "description": "경도 (기본값: 서울 시청 126.978)",
+            "description": "경도 (선택)",
             "schema": {
               "type": "number",
-              "format": "float",
-              "default": 126.978
+              "format": "float"
             }
           },
           {
@@ -606,22 +713,20 @@
             "name": "lat",
             "in": "query",
             "required": false,
-            "description": "위도 (기본값: 서울 시청 37.5665)",
+            "description": "위도 (선택)",
             "schema": {
               "type": "number",
-              "format": "float",
-              "default": 37.5665
+              "format": "float"
             }
           },
           {
             "name": "lng",
             "in": "query",
             "required": false,
-            "description": "경도 (기본값: 서울 시청 126.978)",
+            "description": "경도 (선택)",
             "schema": {
               "type": "number",
-              "format": "float",
-              "default": 126.978
+              "format": "float"
             }
           },
           {
