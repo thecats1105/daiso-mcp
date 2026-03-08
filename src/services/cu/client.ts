@@ -33,6 +33,10 @@ const CU_DEFAULT_HEADERS = {
 const CU_WEB_DEFAULT_HEADERS = {
   'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
   'X-Requested-With': 'XMLHttpRequest',
+  Accept: 'text/html, */*; q=0.01',
+  'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
+  Origin: 'https://cu.bgfretail.com',
+  Referer: 'https://cu.bgfretail.com/store/list.do?category=store',
 } as const;
 
 function toNumber(value: unknown): number {
