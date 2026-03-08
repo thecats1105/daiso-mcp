@@ -185,6 +185,41 @@ describe('fetchCuStores', () => {
     expect(result.stores[0].storeName).toBe('안산중앙점');
   });
 
+  it('HTML 엔티티를 1회만 디코딩한다', async () => {
+    mockFetch.mockResolvedValue(
+      new Response(
+        `
+        <table>
+          <tbody>
+            <tr>
+              <td>
+                <span class="name">A&amp;lt;B</span>
+                <span class="tel">02&nbsp;1234</span>
+              </td>
+              <td>
+                <div class="detail_info">
+                  <address>
+                    <a href="#" onClick="searchLatLng('서울시 강남구', '10001'); return false;">
+                      서울시&nbsp;강남구
+                    </a>
+                  </address>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        `,
+      ),
+    );
+
+    const result = await fetchCuStores({ searchWord: '강남' });
+
+    expect(result.totalCount).toBe(1);
+    expect(result.stores[0].storeName).toBe('A&lt;B');
+    expect(result.stores[0].phone).toBe('02 1234');
+    expect(result.stores[0].address).toBe('서울시 강남구');
+  });
+
   it('CU 매장 목록을 정규화해서 반환한다', async () => {
     mockFetch.mockResolvedValue(
       new Response(
