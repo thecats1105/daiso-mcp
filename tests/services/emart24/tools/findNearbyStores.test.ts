@@ -42,6 +42,7 @@ describe('createFindNearbyStoresTool', () => {
     const result = await tool.handler({ latitude: 37.5, longitude: 127.0, limit: 2 });
 
     const parsed = JSON.parse(result.content[0].text);
+    expect(parsed.appliedKeyword).toBe('');
     expect(parsed.count).toBe(2);
     expect(parsed.stores[0].storeCode).toBe('2');
     expect(parsed.stores[0].distanceM).toBe(0);
@@ -65,6 +66,7 @@ describe('createFindNearbyStoresTool', () => {
     const result = await tool.handler({ latitude: 37.5, longitude: 127.0, limit: 2 });
 
     const parsed = JSON.parse(result.content[0].text);
+    expect(parsed.appliedKeyword).toBe('');
     expect(parsed.stores[0].storeCode).toBe('2');
     expect(parsed.stores[1].storeCode).toBe('1');
     expect(parsed.stores[1].distanceM).toBeNull();
@@ -89,6 +91,7 @@ describe('createFindNearbyStoresTool', () => {
 
     const parsed = JSON.parse(result.content[0].text);
     expect(parsed.location).toBeNull();
+    expect(parsed.appliedKeyword).toBe('강남');
     expect(parsed.stores).toHaveLength(2);
   });
 });

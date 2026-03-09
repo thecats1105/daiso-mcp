@@ -60,6 +60,7 @@ describe('createCheckInventoryTool', () => {
 
     const parsed = JSON.parse(result.content[0].text);
     expect(parsed.pluCd).toBe('8800244010504');
+    expect(parsed.storeFilters.appliedStoreKeyword).toBe('강남');
     expect(parsed.inventory.count).toBe(1);
     expect(parsed.inventory.stores[0].bizNo).toBe('28339');
   });

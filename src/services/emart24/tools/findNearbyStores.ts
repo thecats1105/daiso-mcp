@@ -77,6 +77,7 @@ async function findNearbyStores(args: FindNearbyStoresArgs): Promise<McpToolResp
                 ? { latitude, longitude }
                 : null,
             keyword,
+            appliedKeyword: result.appliedKeyword,
             area1,
             area2,
             service24h,

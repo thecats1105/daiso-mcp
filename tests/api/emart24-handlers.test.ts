@@ -53,6 +53,7 @@ describe('handleEmart24FindStores', () => {
       expect.objectContaining({
         success: true,
         data: expect.objectContaining({
+          appliedKeyword: '강남',
           stores: expect.any(Array),
         }),
       }),

@@ -62,6 +62,7 @@ export async function handleEmart24FindStores(c: ApiContext) {
       {
         location: typeof lat === 'number' && typeof lng === 'number' ? { latitude: lat, longitude: lng } : null,
         keyword,
+        appliedKeyword: result.appliedKeyword,
         area1,
         area2,
         service24h,

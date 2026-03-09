@@ -26,6 +26,7 @@ describe('GET /api/emart24/stores', () => {
 
     const data = await res.json();
     expect(data.success).toBe(true);
+    expect(data.data.appliedKeyword).toBe('강남');
     expect(data.data.stores).toHaveLength(1);
   });
 });

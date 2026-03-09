@@ -49,6 +49,23 @@ const EMART24_FORM_HEADERS = {
   'X-Requested-With': 'XMLHttpRequest',
 } as const;
 
+function buildKeywordVariants(keyword: string): string[] {
+  const trimmed = keyword.trim();
+  if (trimmed.length === 0) {
+    return [''];
+  }
+
+  const tokens = trimmed.split(/\s+/).filter((token) => token.length > 0);
+  const variants = [
+    trimmed,
+    trimmed.replace(/\s+/g, ''),
+    ...tokens,
+    ...tokens.map((token) => token.replace(/역$/, '')),
+  ].filter((value) => value.length > 0);
+
+  return [...new Set(variants)];
+}
+
 function toNumber(value: unknown): number {
   if (typeof value === 'number') {
     return value;
@@ -114,41 +131,52 @@ export function calculateDistanceM(lat1: number, lng1: number, lat2: number, lng
 export async function fetchEmart24Stores(
   params: FetchEmart24StoresParams = {},
   options: RequestOptions = {},
-): Promise<{ totalCount: number; stores: Emart24Store[] }> {
+): Promise<{ totalCount: number; stores: Emart24Store[]; appliedKeyword: string }> {
   const { timeout = 15000 } = options;
   const { keyword = '', area1 = '', area2 = '', page = 1, service24h = false } = params;
+  const keywordVariants = buildKeywordVariants(keyword);
+  let lastError: number | undefined;
 
-  const endpoint = new URL(EMART24_API.STORE_PATH, EMART24_API.WEB_BASE_URL);
-  endpoint.searchParams.set('page', String(page));
-  if (keyword.trim().length > 0) {
-    endpoint.searchParams.set('search', keyword.trim());
-  }
-  if (area1.trim().length > 0) {
-    endpoint.searchParams.set('AREA1', area1.trim());
-  }
-  if (area2.trim().length > 0) {
-    endpoint.searchParams.set('AREA2', area2.trim());
-  }
-  if (service24h) {
-    endpoint.searchParams.set('SVR_24', '1');
+  for (let index = 0; index < keywordVariants.length; index += 1) {
+    const searchKeyword = keywordVariants[index];
+    const endpoint = new URL(EMART24_API.STORE_PATH, EMART24_API.WEB_BASE_URL);
+    endpoint.searchParams.set('page', String(page));
+    if (searchKeyword.length > 0) {
+      endpoint.searchParams.set('search', searchKeyword);
+    }
+    if (area1.trim().length > 0) {
+      endpoint.searchParams.set('AREA1', area1.trim());
+    }
+    if (area2.trim().length > 0) {
+      endpoint.searchParams.set('AREA2', area2.trim());
+    }
+    if (service24h) {
+      endpoint.searchParams.set('SVR_24', '1');
+    }
+
+    const body = await fetchJson<Emart24WebStoreResponse>(endpoint.toString(), {
+      method: 'GET',
+      timeout,
+      headers: EMART24_JSON_HEADERS,
+    });
+
+    if (body.error === 0 || body.error === undefined) {
+      const stores = (body.data || []).map(toStore).filter((store) => store.storeCode.length > 0);
+      return {
+        totalCount: toNumber(body.count),
+        stores,
+        appliedKeyword: searchKeyword,
+      };
+    }
+
+    lastError = body.error;
+    const hasMoreVariants = index < keywordVariants.length - 1;
+    if (body.error !== 1 || !hasMoreVariants) {
+      break;
+    }
   }
 
-  const body = await fetchJson<Emart24WebStoreResponse>(endpoint.toString(), {
-    method: 'GET',
-    timeout,
-    headers: EMART24_JSON_HEADERS,
-  });
-
-  if (body.error !== 0 && body.error !== undefined) {
-    throw new Error(`이마트24 매장 조회 실패: error=${body.error}`);
-  }
-
-  const stores = (body.data || []).map(toStore).filter((store) => store.storeCode.length > 0);
-
-  return {
-    totalCount: toNumber(body.count),
-    stores,
-  };
+  throw new Error(`이마트24 매장 조회 실패: error=${lastError}`);
 }
 
 export async function searchEmart24Products(

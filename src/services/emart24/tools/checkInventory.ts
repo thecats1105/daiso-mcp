@@ -176,6 +176,7 @@ async function checkInventory(args: CheckInventoryArgs): Promise<McpToolResponse
                 : null,
             storeFilters: {
               storeKeyword,
+              appliedStoreKeyword: nearbyStoreResult.appliedKeyword,
               area1,
               area2,
               service24h,

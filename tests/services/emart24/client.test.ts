@@ -46,6 +46,7 @@ describe('fetchEmart24Stores', () => {
     const result = await fetchEmart24Stores({ keyword: '강남' });
 
     expect(result.totalCount).toBe(1);
+    expect(result.appliedKeyword).toBe('강남');
     expect(result.stores[0]).toEqual(
       expect.objectContaining({
         storeCode: '28339',
@@ -63,6 +64,49 @@ describe('fetchEmart24Stores', () => {
     await expect(fetchEmart24Stores({ keyword: '강남' })).rejects.toThrow(
       '이마트24 매장 조회 실패: error=1',
     );
+  });
+
+  it('error=1이면 키워드 변형으로 재시도한다', async () => {
+    mockFetch
+      .mockResolvedValueOnce(new Response(JSON.stringify({ error: 1, count: 0, data: [] })))
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            error: 0,
+            count: 1,
+            data: [{ CODE: '05015', TITLE: 'R안산중앙점', LATITUDE: 37.3, LONGITUDE: 126.8 }],
+          }),
+        ),
+      );
+
+    const result = await fetchEmart24Stores({ keyword: '안산 중앙역' });
+    const firstUrl = String(mockFetch.mock.calls[0][0]);
+    const secondUrl = String(mockFetch.mock.calls[1][0]);
+
+    expect(result.totalCount).toBe(1);
+    expect(result.appliedKeyword).toBe('안산중앙역');
+    expect(result.stores[0].storeCode).toBe('05015');
+    expect(firstUrl).toContain('search=%EC%95%88%EC%82%B0+%EC%A4%91%EC%95%99%EC%97%AD');
+    expect(secondUrl).toContain('search=%EC%95%88%EC%82%B0%EC%A4%91%EC%95%99%EC%97%AD');
+  });
+
+  it('error=1 재시도 후에도 실패하면 예외를 던진다', async () => {
+    mockFetch
+      .mockResolvedValueOnce(new Response(JSON.stringify({ error: 1, count: 0, data: [] })))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ error: 1, count: 0, data: [] })));
+
+    await expect(fetchEmart24Stores({ keyword: '중앙역' })).rejects.toThrow(
+      '이마트24 매장 조회 실패: error=1',
+    );
+  });
+
+  it('error=1이 아닌 경우 재시도하지 않고 실패한다', async () => {
+    mockFetch.mockResolvedValue(new Response(JSON.stringify({ error: 9, count: 0, data: [] })));
+
+    await expect(fetchEmart24Stores({ keyword: '강남' })).rejects.toThrow(
+      '이마트24 매장 조회 실패: error=9',
+    );
+    expect(mockFetch).toHaveBeenCalledTimes(1);
   });
 
   it('area/service 필터 파라미터를 요청 URL에 반영한다', async () => {
