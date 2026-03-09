@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ChartJSNodeCanvas } from 'chartjs-node-canvas';
+import ChartDataLabels from 'chartjs-plugin-datalabels';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -61,6 +62,10 @@ function buildKstDateRange(days, now = new Date()) {
     list.push(formatKstDate(date));
   }
   return list;
+}
+
+function formatNumber(value) {
+  return Number(value).toLocaleString('ko-KR');
 }
 
 async function fetchWorkerInvocations({ accountId, apiToken, scriptName, days }) {
@@ -144,12 +149,15 @@ function aggregateByKstDate(rows, days) {
 
 async function renderChart(points) {
   const width = 1400;
-  const height = 500;
+  const height = 560;
 
   const canvas = new ChartJSNodeCanvas({
     width,
     height,
     backgroundColour: '#ffffff',
+    chartCallback: (ChartJS) => {
+      ChartJS.register(ChartDataLabels);
+    },
   });
 
   const labels = points.map((point) => point.date.slice(5));
@@ -168,15 +176,39 @@ async function renderChart(points) {
           borderWidth: 3,
           fill: true,
           tension: 0.25,
-          pointRadius: 2,
+          pointRadius: 2.5,
+          pointHoverRadius: 3,
         },
       ],
     },
     options: {
       responsive: false,
+      layout: {
+        padding: {
+          top: 28,
+          right: 16,
+          left: 8,
+          bottom: 8,
+        },
+      },
       plugins: {
         legend: {
           display: false,
+        },
+        datalabels: {
+          display: true,
+          color: '#7a4a1f',
+          anchor: 'end',
+          align: 'top',
+          offset: 2,
+          clamp: true,
+          formatter(value) {
+            return formatNumber(value);
+          },
+          font: {
+            size: 10,
+            weight: 'bold',
+          },
         },
         title: {
           display: true,
@@ -188,12 +220,24 @@ async function renderChart(points) {
         },
       },
       scales: {
+        x: {
+          ticks: {
+            maxRotation: 0,
+            autoSkip: false,
+          },
+          grid: {
+            color: 'rgba(0, 0, 0, 0.08)',
+          },
+        },
         y: {
           beginAtZero: true,
           ticks: {
             callback(value) {
-              return Number(value).toLocaleString('ko-KR');
+              return formatNumber(value);
             },
+          },
+          grid: {
+            color: 'rgba(0, 0, 0, 0.08)',
           },
         },
       },
@@ -203,7 +247,7 @@ async function renderChart(points) {
   return canvas.renderToBuffer(configuration);
 }
 
-function buildReadmeSection({ scriptName, updatedAt, days }) {
+function buildReadmeSection({ scriptName, updatedAt, days, total, average, peak }) {
   return [
     README_START,
     '<br>',
@@ -211,6 +255,8 @@ function buildReadmeSection({ scriptName, updatedAt, days }) {
     `<h3>Cloudflare Workers 호출량 (최근 ${days}일)</h3>`,
     '',
     `<img src="./assets/analytics/workers-invocations.png" alt="Cloudflare Workers 호출량 그래프 (최근 ${days}일)" width="860">`,
+    '',
+    `<p><strong>전체 호출량:</strong> ${formatNumber(total)}회 · <strong>일평균:</strong> ${formatNumber(average)}회 · <strong>최대:</strong> ${formatNumber(peak.requests)}회 (${peak.date.slice(5)})</p>`,
     '',
     `<sub>기준 워커: <code>${scriptName}</code> · 마지막 갱신: ${updatedAt}</sub>`,
     '',
@@ -242,13 +288,21 @@ async function main() {
   const points = aggregateByKstDate(rows, DAYS);
   const chartBuffer = await renderChart(points);
   await fs.writeFile(CHART_PATH, chartBuffer);
+  const total = points.reduce((sum, point) => sum + point.requests, 0);
+  const average = Math.round(total / DAYS);
+  const peak = points.reduce(
+    (max, point) => (point.requests > max.requests ? point : max),
+    points[0] ?? { date: formatKstDate(new Date()), requests: 0 },
+  );
 
   const summary = {
     scriptName: SCRIPT_NAME,
     timezone: 'Asia/Seoul',
     days: DAYS,
     updatedAt: new Date().toISOString(),
-    total: points.reduce((sum, point) => sum + point.requests, 0),
+    total,
+    average,
+    peak,
     points,
   };
 
@@ -258,6 +312,9 @@ async function main() {
     scriptName: SCRIPT_NAME,
     updatedAt: formatKstDateTime(new Date()),
     days: DAYS,
+    total,
+    average,
+    peak,
   });
   await updateReadme(section);
 
