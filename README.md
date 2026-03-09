@@ -26,17 +26,25 @@
 
 <img src="./assets/analytics/workers-invocations.png" alt="Cloudflare Workers 호출량 그래프 (최근 9일)" width="860">
 
-| 지표          | 값              |
-| ------------- | --------------- |
-| 전체 호출량   | 20,568회        |
-| 일평균        | 2,285회         |
-| 최근 7일 합계 | 20,537회        |
-| 최대 호출량   | 5,163회 (03-09) |
-| 최근 호출량   | 5,163회 (03-09) |
-| 전일 호출량   | 5,096회 (03-08) |
-| 전일 대비     | +67회 (+1.3%)   |
+<table width="100%">
+  <thead>
+    <tr>
+      <th align="left">지표</th>
+      <th align="left">값</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>전체 호출량</td><td>20,565회</td></tr>
+    <tr><td>일평균</td><td>2,285회</td></tr>
+    <tr><td>최근 7일 합계</td><td>20,534회</td></tr>
+    <tr><td>최대 호출량</td><td>5,165회 (03-09)</td></tr>
+    <tr><td>최근 호출량</td><td>5,165회 (03-09)</td></tr>
+    <tr><td>전일 호출량</td><td>5,094회 (03-08)</td></tr>
+    <tr><td>전일 대비</td><td>+71회 (+1.4%)</td></tr>
+  </tbody>
+</table>
 
-<sub>기준 워커: <code>daiso-mcp</code> · 마지막 갱신: 2026-03-09 22:02 KST</sub>
+<sub>기준 워커: <code>daiso-mcp</code> · 마지막 갱신: 2026-03-09 22:04 KST</sub>
 
 <!-- WORKERS_INVOCATIONS_CHART:END -->
 
