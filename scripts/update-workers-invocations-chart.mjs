@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ChartJSNodeCanvas } from 'chartjs-node-canvas';
+import { registerFont } from 'canvas';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import {
   aggregateByKstDateRange,
@@ -26,6 +27,13 @@ const README_PATH = path.join(REPO_ROOT, 'README.md');
 const OUTPUT_DIR = path.join(REPO_ROOT, 'assets', 'analytics');
 const CHART_PATH = path.join(OUTPUT_DIR, 'workers-invocations.png');
 const DATA_PATH = path.join(OUTPUT_DIR, 'workers-invocations.json');
+const PREFERRED_FONT_FAMILY = '"Noto Sans KR", "Nanum Gothic", sans-serif';
+const FONT_CANDIDATES = [
+  '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc',
+  '/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc',
+  '/usr/share/fonts/truetype/nanum/NanumGothic.ttf',
+  '/System/Library/Fonts/AppleSDGothicNeo.ttc',
+];
 
 const README_START = '<!-- WORKERS_INVOCATIONS_CHART:START -->';
 const README_END = '<!-- WORKERS_INVOCATIONS_CHART:END -->';
@@ -135,6 +143,18 @@ function drawRoundRect(ctx, x, y, width, height, radius) {
   ctx.closePath();
 }
 
+async function initializeKoreanFonts() {
+  for (const fontPath of FONT_CANDIDATES) {
+    try {
+      await fs.access(fontPath);
+      registerFont(fontPath, { family: 'Noto Sans KR' });
+      registerFont(fontPath, { family: 'Nanum Gothic' });
+    } catch {
+      // 폰트 파일이 없으면 다음 후보를 확인합니다.
+    }
+  }
+}
+
 async function renderChart(points, summary) {
   const movingAverage = calculateMovingAverage(points, 7);
   const labels = points.map((point) => point.date.slice(5));
@@ -175,11 +195,11 @@ async function renderChart(points, summary) {
       ctx.stroke();
 
       let fontSize = 13;
-      ctx.font = `bold ${fontSize}px sans-serif`;
+      ctx.font = `bold ${fontSize}px ${PREFERRED_FONT_FAMILY}`;
       ctx.fillStyle = '#111827';
       while (fontSize > 10 && ctx.measureText(line).width > panelWidth - 24) {
         fontSize -= 1;
-        ctx.font = `bold ${fontSize}px sans-serif`;
+        ctx.font = `bold ${fontSize}px ${PREFERRED_FONT_FAMILY}`;
       }
       const textWidth = ctx.measureText(line).width;
       const centeredX = x + Math.max((panelWidth - textWidth) / 2, 12);
@@ -193,6 +213,7 @@ async function renderChart(points, summary) {
     height: 560,
     backgroundColour: '#ffffff',
     chartCallback: (ChartJS) => {
+      ChartJS.defaults.font.family = PREFERRED_FONT_FAMILY;
       ChartJS.register(ChartDataLabels);
       ChartJS.register(weekendShadePlugin);
       ChartJS.register(summaryPanelPlugin);
@@ -267,6 +288,7 @@ async function renderChart(points, summary) {
             return formatNumber(value);
           },
           font: {
+            family: PREFERRED_FONT_FAMILY,
             size: 10,
             weight: 'bold',
           },
@@ -276,6 +298,7 @@ async function renderChart(points, summary) {
           text: `Cloudflare Workers 호출량 (최근 ${labels.length}일)`,
           color: '#111111',
           font: {
+            family: PREFERRED_FONT_FAMILY,
             size: 20,
           },
         },
@@ -325,6 +348,7 @@ async function updateReadme(section) {
 }
 
 async function main() {
+  await initializeKoreanFonts();
   await fs.mkdir(OUTPUT_DIR, { recursive: true });
   const todayKstDate = formatKstDate(new Date());
   const endDateExclusive = parseKstDateText(todayKstDate);
