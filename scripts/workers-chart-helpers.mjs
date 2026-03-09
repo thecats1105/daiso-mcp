@@ -204,12 +204,10 @@ export function buildReadmeSection({
 }) {
   return [
     '<!-- WORKERS_INVOCATIONS_CHART:START -->',
-    `### Cloudflare Workers 호출량 (${startDate} ~ 현재, ${days}일)`,
+    `<h3>Cloudflare Workers 호출량 (${startDate} ~ 현재, ${days}일)</h3>`,
     '',
     `<img src="./assets/analytics/workers-invocations.png?v=${cacheKey}" alt="Cloudflare Workers 호출량 그래프 (${startDate} ~ 현재)" width="100%">`,
     '',
-    '<sub>요약 지표는 차트 우측 상단 패널에 표시됩니다.</sub>',
-    '<br>',
     `<sub>기준 워커: <code>${scriptName}</code> · 마지막 갱신: ${updatedAt}</sub>`,
     '',
     '<!-- WORKERS_INVOCATIONS_CHART:END -->',

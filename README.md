@@ -17,6 +17,15 @@
 [![Code Coverage](https://img.shields.io/badge/Code%20Coverage-100%25-brightgreen.svg)](https://github.com/hmmhmmhm/daiso-mcp/actions/workflows/coverage.yml)
 [![Coverage](https://github.com/hmmhmmhm/daiso-mcp/actions/workflows/coverage.yml/badge.svg?branch=main)](https://github.com/hmmhmmhm/daiso-mcp/actions/workflows/coverage.yml)
 
+<!-- WORKERS_INVOCATIONS_CHART:START -->
+<h3>Cloudflare Workers 호출량 (2026-03-01 ~ 현재, 9일)</h3>
+
+<img src="./assets/analytics/workers-invocations.png?v=2026-03-09T13:27:44.240Z" alt="Cloudflare Workers 호출량 그래프 (2026-03-01 ~ 현재)" width="100%">
+
+<sub>기준 워커: <code>daiso-mcp</code> · 마지막 갱신: 2026-03-09 22:27 KST</sub>
+
+<!-- WORKERS_INVOCATIONS_CHART:END -->
+
 <br>
 
 <br>
@@ -24,18 +33,6 @@
 <img src="https://i.imgur.com/mPwS4Kv.png" width="400">&nbsp;&nbsp;<img src="https://i.imgur.com/MrndJ3g.png" width="400">
 
 </div>
-
-<!-- WORKERS_INVOCATIONS_CHART:START -->
-
-### Cloudflare Workers 호출량 (2026-03-01 ~ 현재, 9일)
-
-<img src="./assets/analytics/workers-invocations.png?v=2026-03-09T13:22:50.751Z" alt="Cloudflare Workers 호출량 그래프 (2026-03-01 ~ 현재)" width="100%">
-
-<sub>요약 지표는 차트 우측 상단 패널에 표시됩니다.</sub>
-<br>
-<sub>기준 워커: <code>daiso-mcp</code> · 마지막 갱신: 2026-03-09 22:22 KST</sub>
-
-<!-- WORKERS_INVOCATIONS_CHART:END -->
 
 <br>
 

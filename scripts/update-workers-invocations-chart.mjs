@@ -312,15 +312,14 @@ async function updateReadme(section) {
   const readme = await fs.readFile(README_PATH, 'utf8');
   const pattern = new RegExp(`${README_START}[\\s\\S]*?${README_END}`, 'm');
   const withoutSection = readme.replace(pattern, '').replace(/\n{3,}/g, '\n\n');
-  const closingDiv = '</div>';
-  const divIndex = withoutSection.indexOf(closingDiv);
+  const badgesAnchor = '\n\n<br>\n\n<br>\n\n<img src="https://i.imgur.com/mPwS4Kv.png"';
 
-  const next =
-    divIndex >= 0
-      ? `${withoutSection.slice(0, divIndex + closingDiv.length)}\n\n${section}${withoutSection.slice(
-          divIndex + closingDiv.length,
-        )}`
-      : `${section}\n\n${withoutSection}`;
+  const next = withoutSection.includes(badgesAnchor)
+    ? withoutSection.replace(
+        badgesAnchor,
+        `\n\n${section}\n\n<br>\n\n<br>\n\n<img src="https://i.imgur.com/mPwS4Kv.png"`,
+      )
+    : `${section}\n\n${withoutSection}`;
 
   await fs.writeFile(README_PATH, next, 'utf8');
 }
