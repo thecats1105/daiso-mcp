@@ -18,6 +18,18 @@
 [![Coverage](https://github.com/hmmhmmhm/daiso-mcp/actions/workflows/coverage.yml/badge.svg?branch=main)](https://github.com/hmmhmmhm/daiso-mcp/actions/workflows/coverage.yml)
 
 <br>
+
+<!-- WORKERS_INVOCATIONS_CHART:START -->
+<br>
+
+<h3>Cloudflare Workers 호출량 (최근 30일)</h3>
+
+<img src="./assets/analytics/workers-invocations.png" alt="Cloudflare Workers 호출량 그래프 (최근 30일)" width="860">
+
+<sub>기준 워커: <code>daiso-mcp</code> · 마지막 갱신: 준비 중</sub>
+
+<!-- WORKERS_INVOCATIONS_CHART:END -->
+
 <br>
 
 <img src="https://i.imgur.com/mPwS4Kv.png" width="400">&nbsp;&nbsp;<img src="https://i.imgur.com/MrndJ3g.png" width="400">
