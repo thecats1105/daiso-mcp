@@ -158,9 +158,9 @@ async function renderChart(points, summary) {
       }
 
       const x = chartArea.left;
-      const y = chartArea.bottom + 34;
+      const y = chartArea.bottom + 44;
       const panelWidth = chartArea.right - chartArea.left;
-      const panelHeight = 30;
+      const panelHeight = 34;
       const line =
         `전체 ${formatNumber(summary.total)}회  |  일평균 ${formatNumber(summary.average)}회  |  ` +
         `최근 7일 ${formatNumber(summary.recent7Total)}회  |  최대 ${formatNumber(summary.peak.requests)}회 (${summary.peak.date.slice(5)})  |  ` +
@@ -174,11 +174,16 @@ async function renderChart(points, summary) {
       ctx.lineWidth = 1;
       ctx.stroke();
 
-      ctx.font = '11px sans-serif';
+      let fontSize = 13;
+      ctx.font = `bold ${fontSize}px sans-serif`;
       ctx.fillStyle = '#111827';
+      while (fontSize > 10 && ctx.measureText(line).width > panelWidth - 24) {
+        fontSize -= 1;
+        ctx.font = `bold ${fontSize}px sans-serif`;
+      }
       const textWidth = ctx.measureText(line).width;
       const centeredX = x + Math.max((panelWidth - textWidth) / 2, 12);
-      ctx.fillText(line, centeredX, y + 20);
+      ctx.fillText(line, centeredX, y + 23);
       ctx.restore();
     },
   };
@@ -218,7 +223,7 @@ async function renderChart(points, summary) {
         {
           label: '7일 이동평균',
           data: movingAverage,
-          borderColor: '#0f766e',
+          borderColor: '#ea580c',
           borderWidth: 2,
           borderDash: [6, 4],
           pointRadius: 0,
@@ -233,7 +238,7 @@ async function renderChart(points, summary) {
           top: 28,
           right: 16,
           left: 8,
-          bottom: 86,
+          bottom: 112,
         },
       },
       plugins: {
