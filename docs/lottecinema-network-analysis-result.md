@@ -3,6 +3,7 @@
 작성일: 2026-03-10 (KST)  
 실측 도구: Playwright MCP  
 대상:
+
 - `https://www.lottecinema.co.kr/NLCHS/Ticketing`
 - `https://www.lottecinema.co.kr/LCWS/Ticketing/TicketingData.aspx`
 - `https://www.lottecinema.co.kr/LCWS/Common/MainData.aspx`

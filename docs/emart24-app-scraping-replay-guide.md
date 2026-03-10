@@ -17,14 +17,17 @@
 - 매장 상세: `GET /api/stock/stock/store/{bizNo}`
 
 베이스 URL:
+
 - `https://everse.emart24.co.kr`
 
 ## 3. 공통 요청 조건
 
 실측 기준 최소 헤더:
+
 - `x-requested-with: XMLHttpRequest`
 
 폼 요청(`POST`) 추가:
+
 - `content-type: application/x-www-form-urlencoded; charset=UTF-8`
 
 ## 4. 재현 명령
@@ -43,6 +46,7 @@ curl -sS 'https://everse.emart24.co.kr/stock/stock/search' \
 ```
 
 기대 결과:
+
 - `totalCnt` 양수
 - `first.pluCd`, `first.goodsNm` 존재
 
@@ -57,6 +61,7 @@ curl -sS 'https://everse.emart24.co.kr/api/stock/v1/search/keyword' \
 ```
 
 기대 결과:
+
 - HTTP `200`
 - 본문 길이 `0` (`Content-Length: 0`)일 수 있음
 
@@ -69,6 +74,7 @@ curl -sS 'https://everse.emart24.co.kr/api/stock/v1/stock/goods/8800244010504' \
 ```
 
 기대 결과:
+
 - `msg: "success"`
 
 ### D. 매장별 재고 수량 조회
@@ -84,6 +90,7 @@ curl -sS 'https://everse.emart24.co.kr/api/stock/v2/stock-search/store?searchPlu
 ```
 
 기대 결과:
+
 - `storeGoodsQty` 배열 존재
 - `qtySample.BIZNO`, `qtySample.BIZQTY` 확인 가능
 
@@ -101,6 +108,7 @@ curl -sS 'https://everse.emart24.co.kr/api/stock/stock/store/28339' \
 ```
 
 기대 결과:
+
 - `storeNm`, `storeAddr` 존재
 
 ## 5. 캡처 기반 분석 명령
@@ -132,10 +140,13 @@ jq -r 'select(.request.path|test("^/api/stock|^/stock/stock/search")) | [.reques
 ## 7. 실패 대응
 
 1. `403/401` 발생
+
 - 세션 의존 요청일 수 있으므로 앱 최신 캡처 기준으로 헤더/쿠키 재검증
 
 2. `storeGoodsQty` 비어 있음
+
 - `searchPluCode`와 `bizNoArr` 조합을 캡처값으로 다시 맞춰 재시도
 
 3. DNS/네트워크 실패
+
 - 실행 환경 네트워크 정책(샌드박스/사내망) 확인

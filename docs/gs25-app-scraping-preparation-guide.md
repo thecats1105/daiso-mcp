@@ -9,6 +9,7 @@
 스크래핑 가능 데이터를 식별하기 위한 준비 절차를 제공합니다.
 
 핵심 산출물:
+
 - `raw.mitm`: 원본 mitmproxy 플로우 파일
 - `requests.jsonl`: 민감정보 마스킹된 요청/응답 레코드
 - `summary.json`: 시나리오/건수 요약
@@ -30,6 +31,7 @@
 5. 캡처 시나리오 사전 정의
 
 권장 시나리오:
+
 - 앱 실행
 - 점포/지역 설정
 - 상품 검색
@@ -55,6 +57,7 @@ mitmdump \
 수집 종료는 `Ctrl+C`로 합니다.
 
 참고:
+
 - 초기에 호스트 필터를 좁게 시작하고 누락 시 확대합니다.
 - 필요 시 `--set gs25_capture_hosts='gsretail.com,gs25.com,thepopplus.co.kr,airbridge.io,hackle.io'`로 확장해 재수집합니다.
 
@@ -122,14 +125,17 @@ jq -r '.response.statusCode // "NA"' captures/gs25-20260308/requests.jsonl | sor
 ## 8. 실패 시 점검
 
 1. HTTPS 요청이 거의 안 보임
+
 - iOS 인증서 신뢰 설정 재확인
 - 프록시 IP/포트 오타 확인
 
 2. 앱 핵심 요청이 누락됨
+
 - 앱 certificate pinning 가능성 점검
 - Android 동일 시나리오 비교 캡처
 
 3. 요청은 보이지만 재고 필드가 없음
+
 - 재고 확정 직전 단계(매장 선택 후 재고 결과 화면)까지 시나리오 확대
 
 ## 9. 후속 문서화 규칙

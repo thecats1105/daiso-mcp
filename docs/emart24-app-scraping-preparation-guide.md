@@ -9,6 +9,7 @@
 "캡처 준비 -> 수집 -> 1차 분석" 절차를 제공합니다.
 
 핵심 산출물:
+
 - `raw.mitm`: 원본 mitmproxy 플로우 파일
 - `requests.jsonl`: 민감정보 마스킹된 요청/응답 레코드
 - `summary.json`: 시나리오/건수 요약
@@ -28,6 +29,7 @@
 5. 캡처 시나리오 사전 정의
 
 권장 시나리오:
+
 - 앱 실행
 - 점포 선택 또는 내 주변 매장 진입
 - 상품 검색
@@ -53,6 +55,7 @@ mitmdump \
 수집 종료는 `Ctrl+C`로 합니다.
 
 참고:
+
 - 첫 캡처에서는 호스트 필터를 좁게 시작하고, 누락이 의심되면 확장합니다.
 - 필요 시 `--set emart24_capture_hosts='emart24.co.kr,abr.ge,app-measurement.com,googleapis.com'`처럼 확대해 재수집합니다.
 
@@ -120,14 +123,17 @@ jq -r '.response.statusCode // "NA"' captures/emart24-20260308/requests.jsonl | 
 ## 8. 실패 시 점검
 
 1. HTTPS 요청이 거의 안 보임
+
 - iOS 인증서 신뢰 설정 재확인
 - 프록시 IP/포트 오타 확인
 
 2. 앱 핵심 요청만 누락
+
 - certificate pinning 가능성 점검
 - Android 동일 시나리오 비교 캡처
 
 3. 요청은 보이는데 의미 있는 데이터가 없음
+
 - 시나리오를 더 구체화해 재수집(상품 상세, 장바구니, 픽업 확정 직전 단계)
 
 ## 9. 후속 문서화 규칙

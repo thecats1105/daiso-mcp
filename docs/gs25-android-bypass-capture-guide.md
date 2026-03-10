@@ -67,6 +67,7 @@ frida -U -f com.gsr.gs25 -l scripts/frida/android-ssl-bypass.js
 ```
 
 참고:
+
 - 스크립트가 없다면 일반적인 우회 포인트를 포함한 템플릿을 먼저 작성
 - 최소 대상:
   - `javax.net.ssl.*`
@@ -116,14 +117,17 @@ jq -r '.request.host + \"\\t\" + .request.method + \"\\t\" + .request.path' \
 ## 9. 실패 시 체크리스트
 
 1. `connects`만 많고 `requests`가 적음
+
 - 핀닝 우회 미적용 가능성
 - 앱 프로세스 재시작 타이밍에 Frida attach 누락
 
 2. `app_error/login` 반복
+
 - 앱 세션/로그인 불안정
 - 프록시 또는 SSL 우회 적용 순서 문제
 
 3. `msg-api`만 보임
+
 - 네이티브 채널 암호화 또는 별도 전송 레이어 가능성
 - 우회 포인트 확대 필요 (Cronet/Native SSL 라이브러리 포함)
 

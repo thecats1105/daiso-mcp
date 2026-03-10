@@ -1,6 +1,7 @@
 # GS25 세션 인계 메모 (2026-03-09)
 
 ## 1) 현재 결론
+
 - `b2c-apigw.woodongs.com`, `b2c-bff.woodongs.com`는 앱에서 실제 접속됨
   - 근거: `captures/gs25-android-20260309-r7,r9,r10,r11,r12,r13`의 `pcap TLS SNI`
 - 다만 `mitmdump requests.jsonl` 평문 계층에서는 `b2c-*` 요청/응답이 계속 미확보
@@ -9,6 +10,7 @@
   - `GET m.woodongs.com/app_error/login` 및 정적 파일
 
 ## 2) 누적 시도 요약
+
 - `r1~r6`: Android + Frida 우회/후킹 기본 실측
 - `r7`: `tcpdump` 병행으로 `b2c-*` SNI 최초 확인
 - `r8`: TLS keylog 콜백 시도(성과 없음)
@@ -17,6 +19,7 @@
   - 평문 API 스키마는 미확보
 
 ## 3) 주요 파일
+
 - 문서:
   - `docs/gs25-network-analysis-result.md`
   - `docs/gs25-app-capture-attempt-log-20260308.md`
@@ -31,6 +34,7 @@
   - `scripts/frida/gs25-b2c-cronet-probe.js`
 
 ## 4) 다음 세션 목표
+
 1. `r14` 캡처 시작 (`mitmdump + frida + tcpdump` 동시)
 2. 사용자 재현 1회 직후 즉시 분석
 3. `b2c-*` 평문 API 후보 확보 시도
@@ -38,6 +42,7 @@
 5. 결과를 `docs/gs25-network-analysis-result.md`에 `22)` 섹션으로 추가
 
 ## 5) 다음 세션 입력 프롬프트 (복붙용)
+
 ```text
 프로젝트: /Users/hm/Documents/GitHub/daiso-mcp
 
