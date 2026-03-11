@@ -4,64 +4,64 @@
   "days": 10,
   "startDate": "2026-03-01",
   "endDate": "2026-03-10",
-  "updatedAt": "2026-03-10T15:41:53.393Z",
-  "total": 24885,
-  "average": 2489,
+  "updatedAt": "2026-03-11T00:41:38.143Z",
+  "total": 167698,
+  "average": 16770,
   "peak": {
     "date": "2026-03-10",
-    "requests": 8185
+    "requests": 43509
   },
-  "recent7Total": 24810,
+  "recent7Total": 164112,
   "latest": {
     "date": "2026-03-10",
-    "requests": 8185
+    "requests": 43509
   },
   "previous": {
     "date": "2026-03-09",
-    "requests": 4397
+    "requests": 26890
   },
-  "dayOverDayDiff": 3788,
-  "dayOverDayPercent": 86.1496474869229,
+  "dayOverDayDiff": 16619,
+  "dayOverDayPercent": 61.80364447750093,
   "points": [
     {
       "date": "2026-03-01",
-      "requests": 5
+      "requests": 302
     },
     {
       "date": "2026-03-02",
-      "requests": 20
+      "requests": 1136
     },
     {
       "date": "2026-03-03",
-      "requests": 50
+      "requests": 2148
     },
     {
       "date": "2026-03-04",
-      "requests": 1833
+      "requests": 16438
     },
     {
       "date": "2026-03-05",
-      "requests": 1560
+      "requests": 10629
     },
     {
       "date": "2026-03-06",
-      "requests": 2967
+      "requests": 22587
     },
     {
       "date": "2026-03-07",
-      "requests": 1809
+      "requests": 17300
     },
     {
       "date": "2026-03-08",
-      "requests": 4059
+      "requests": 26759
     },
     {
       "date": "2026-03-09",
-      "requests": 4397
+      "requests": 26890
     },
     {
       "date": "2026-03-10",
-      "requests": 8185
+      "requests": 43509
     }
   ]
 }
